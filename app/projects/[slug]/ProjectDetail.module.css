@@ -16,8 +16,6 @@
   padding: 40px 24px 96px;
 }
 
-
-
 @media (min-width: 768px) {
   .hero {
     padding-left: 64px;
@@ -33,20 +31,27 @@
   }
 }
 
+/* ============================= */
+/* BACK LINK */
+/* ============================= */
+
 .backLink {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   transition: color 0.2s ease;
-  gap: 10px;
 }
 
 .backLink:hover {
   color: #fff;
 }
+
+/* ============================= */
+/* BADGE */
+/* ============================= */
 
 .badge {
   display: inline-flex;
@@ -61,6 +66,11 @@
   color: #a3e635;
   border-radius: 9999px;
 }
+
+/* ============================= */
+/* LIVE BUTTON */
+/* ============================= */
+
 .liveButton {
   display: inline-flex;
   align-items: center;
@@ -73,13 +83,19 @@
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .liveButton:hover {
   background: #6a006a;
   transform: translateY(-2px);
 }
+
+/* ============================= */
+/* HERO GRID */
+/* ============================= */
 
 .heroGrid {
   margin-top: 40px;
@@ -101,6 +117,10 @@
     gap: 80px;
   }
 }
+
+/* ============================= */
+/* HERO TEXT */
+/* ============================= */
 
 .heroTitle {
   font-family: Georgia, "Times New Roman", serif;
@@ -129,6 +149,10 @@
   max-width: 28rem;
 }
 
+/* ============================= */
+/* HERO IMAGE */
+/* ============================= */
+
 .heroImageWrap {
   position: relative;
   width: 100%;
@@ -144,9 +168,11 @@
   aspect-ratio: 4 / 3;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.05);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   color: rgba(255, 255, 255, 0.3);
   font-size: 14px;
 }
@@ -177,6 +203,10 @@
   }
 }
 
+/* ============================= */
+/* SECTION TITLE */
+/* ============================= */
+
 .sectionTitle {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 30px;
@@ -188,6 +218,10 @@
     font-size: 36px;
   }
 }
+
+/* ============================= */
+/* ABOUT TEXT */
+/* ============================= */
 
 .aboutText {
   max-width: 48rem;
@@ -220,10 +254,18 @@
   }
 }
 
+/* ============================= */
+/* FEATURES TITLE */
+/* ============================= */
+
 .featuresTitle {
   text-align: center;
   margin-bottom: 64px;
 }
+
+/* ============================= */
+/* FEATURES GRID */
+/* ============================= */
 
 .featuresGrid {
   display: grid;
@@ -240,26 +282,42 @@
   }
 }
 
+/* ============================= */
+/* FEATURE CARD */
+/* ============================= */
+
 .featureCard {
   background: #f9fafb;
   border-radius: 16px;
   padding: 32px;
+
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
+/* ============================= */
+/* FEATURE ICON */
+/* ============================= */
+
 .featureIcon {
   width: 44px;
   height: 44px;
   border-radius: 8px;
+
   background: #ecfccb;
   color: #65a30d;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   flex-shrink: 0;
 }
+
+/* ============================= */
+/* FEATURE TEXT */
+/* ============================= */
 
 .featureCardTitle {
   font-weight: 600;
@@ -294,10 +352,18 @@
   }
 }
 
+/* ============================= */
+/* STEPS TITLE */
+/* ============================= */
+
 .stepsTitle {
   text-align: center;
   margin-bottom: 80px;
 }
+
+/* ============================= */
+/* STEPS INNER */
+/* ============================= */
 
 .stepsInner {
   position: relative;
@@ -305,12 +371,18 @@
   margin: 0 auto;
 }
 
+/* ============================= */
+/* CONNECTOR LINE */
+/* ============================= */
+
 .connectorLine {
   display: none;
+
   position: absolute;
   top: 32px;
   left: 10%;
   right: 10%;
+
   height: 1px;
   background: #e5e7eb;
 }
@@ -321,12 +393,19 @@
   }
 }
 
+/* ============================= */
+/* STEPS GRID */
+/* ============================= */
+
 .stepsGrid {
   position: relative;
+
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+
   row-gap: 48px;
   column-gap: 24px;
+
   text-align: center;
 }
 
@@ -337,21 +416,33 @@
   }
 }
 
+/* ============================= */
+/* STEP ITEM */
+/* ============================= */
+
 .stepItem {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
+/* ============================= */
+/* STEP ICON */
+/* ============================= */
+
 .stepIconCircle {
   margin-bottom: 24px;
+
   width: 64px;
   height: 64px;
+
   border-radius: 9999px;
   background: #f3f4f6;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   position: relative;
   z-index: 1;
 }
@@ -360,71 +451,22 @@
   color: #6b7280;
 }
 
+/* ============================= */
+/* STEP TITLE */
+/* ============================= */
+
 .stepTitle {
   font-weight: 600;
   margin-bottom: 12px;
 }
+
+/* ============================= */
+/* STEP TEXT */
+/* ============================= */
 
 .stepText {
   font-size: 14px;
   color: #6b7280;
   line-height: 1.6;
   max-width: 180px;
-}
-.wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 640px;
-  height: 560px;
-  margin: 0 auto;
-}
-
-.canvas {
-  width: 100% !important;
-  height: 100% !important;
-  touch-action: none;
-}
-
-/* ============================= */
-/* BUBBLE LOADER */
-/* ============================= */
-
-.loader {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  gap: 14px;
-
-  background: #fff;
-  border-radius: 16px;
-}
-
-.spinner {
-  width: 42px;
-  height: 42px;
-
-  border: 3px solid #e5e7eb;
-  border-top-color: #800080;
-
-  border-radius: 50%;
-
-  animation: spin 0.8s linear infinite;
-}
-
-.loader span {
-  font-size: 14px;
-  color: #6b7280;
-  letter-spacing: 0.02em;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
