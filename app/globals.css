@@ -43,6 +43,7 @@ body {
   background: #ffffff;
   color: #101322;
   overflow-x: hidden;
+   overflow-y: hidden;
 }
 
 html, body {
@@ -72,7 +73,7 @@ html, body {
 
 .projects-header {
   text-align: center;
-  padding-top: 85px;
+  padding-top: px;
   position: relative;
   z-index: 5;
 }

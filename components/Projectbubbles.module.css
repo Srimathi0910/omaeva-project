@@ -1,47 +1,143 @@
+/* ================================================================
+   PROJECT BUBBLE SECTION
+================================================================ */
+
 .wrapper {
   position: relative;
   width: 100%;
-  max-width: 640px;
-  height: 560px;
-  margin: 0 auto;
+  height: 680px;
+
+  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      rgba(128, 0, 128, 0.035),
+      transparent 55%
+    );
+
+  isolation: isolate;
 }
+
+
+/* ================================================================
+   CANVAS
+================================================================ */
 
 .canvas {
   width: 100% !important;
   height: 100% !important;
+  display: block;
+
+  cursor: pointer;
   touch-action: none;
 }
 
-.caption {
+
+/* ================================================================
+   SUBTLE AMBIENT EDGE
+================================================================ */
+
+.wrapper::before {
+  display: none;
+}
+
+
+/* ================================================================
+   LOADER
+================================================================ */
+
+.loader {
   position: absolute;
-  left: 50%;
-  bottom: 12px;
-  transform: translateX(-50%);
+  inset: 0;
+
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 18px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  justify-content: center;
+
+  background: #ffffff;
+  z-index: 10;
   pointer-events: none;
+
+  transition: opacity 0.4s ease;
 }
 
-.captionTitle {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a1a;
+
+/* ================================================================
+   SPINNER
+================================================================ */
+
+.spinner {
+  width: 34px;
+  height: 34px;
+
+  border-radius: 50%;
+  border: 2px solid rgba(128, 0, 128, 0.12);
+  border-top-color: rgba(128, 0, 128, 0.75);
+
+  animation: bubbleSpin 0.8s linear infinite;
 }
 
-.captionCategory {
-  font-size: 12px;
-  color: #a855f7;
+
+@keyframes bubbleSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-@media (max-width: 640px) {
+
+/* ================================================================
+   DESKTOP
+================================================================ */
+
+@media (min-width: 768px) {
   .wrapper {
-    height: 420px;
+    height: 720px;
+  }
+}
+
+
+/* ================================================================
+   LARGE DESKTOP
+================================================================ */
+
+@media (min-width: 1200px) {
+  .wrapper {
+    height: 760px;
+  }
+}
+
+
+/* ================================================================
+   MOBILE
+================================================================ */
+
+@media (max-width: 767px) {
+  .wrapper {
+    height: 560px;
+  }
+}
+
+
+/* ================================================================
+   SMALL MOBILE
+================================================================ */
+
+@media (max-width: 480px) {
+  .wrapper {
+    height: 500px;
+  }
+}
+
+
+/* ================================================================
+   REDUCE MOTION
+================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
   }
 }
