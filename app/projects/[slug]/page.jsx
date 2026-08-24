@@ -81,15 +81,15 @@ export default async function ProjectDetailPage({ params }) {
             <p className={styles.heroTagline}>{project.tagline}</p>
             <p className={styles.heroDescription}>{project.description}</p>
             {project.liveUrl && (
-  <a
-    href={project.liveUrl}
-    target="_blank"
-    rel="noopener noreferrer"
-    className={styles.liveButton}
-  >
-    Visit Live Site
-  </a>
-)}
+              <a
+                href={project.liveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.liveButton}
+              >
+                Visit Live Site
+              </a>
+            )}
           </div>
 
           {/* Image column */}
@@ -105,9 +105,7 @@ export default async function ProjectDetailPage({ params }) {
               />
             </div>
           ) : (
-            <div className={styles.heroImagePlaceholder}>
-              Image coming soon
-            </div>
+            <div className={styles.heroImagePlaceholder}>Image coming soon</div>
           )}
         </div>
       </section>
