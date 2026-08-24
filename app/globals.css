@@ -76,6 +76,10 @@ html, body {
   padding-top: px;
   position: relative;
   z-index: 5;
+  min-height: 220px;
+  height: auto;
+  padding-bottom: 30px;
+  box-sizing: border-box;
 }
 
 .section-pill {

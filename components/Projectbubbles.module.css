@@ -6,10 +6,11 @@
   position: relative;
   width: 100%;
   height: 680px;
+  box-sizing: border-box;
+
+  padding-top: 100px;
 
   overflow: hidden;
-  overflow-x: hidden;
-  overflow-y: hidden;
 
   background:
     radial-gradient(
@@ -18,6 +19,7 @@
       transparent 55%
     );
 
+  background-color: #dd78dd;
   isolation: isolate;
 }
 
