@@ -31,7 +31,7 @@ export default function Home() {
         <ProjectBubbles />
 
         {/* Center text */}
-        <div className="center-content">
+        {/* <div className="center-content">
 
           <div className="center-circle">
             <span>+</span>
@@ -41,32 +41,10 @@ export default function Home() {
             Explore our work
           </p>
 
-        </div>
+        </div> */}
 
       </section>
 
-      {/* Bottom information */}
-      <section className="projects-footer">
-
-        <div>
-          <span className="small-label">
-            SELECTED WORK
-          </span>
-
-          <h2>
-            Digital experiences
-            <br />
-            built to stand out.
-          </h2>
-        </div>
-
-        <div className="scroll-indicator">
-          <span>Scroll to explore</span>
-
-          <div className="line"></div>
-        </div>
-
-      </section>
 
     </main>
   );

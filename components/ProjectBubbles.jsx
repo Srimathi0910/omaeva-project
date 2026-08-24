@@ -7,41 +7,125 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./Projectbubbles.module.css";
 
-/* ------------------------------------------------------------------ */
-/* 1. Project data                                                     */
-/* ------------------------------------------------------------------ */
-const PROJECTS = [
-  { id: 1, title: "Cilicosys", category: "Software Development", image: "/projects/cilicosys.png", slug: "cilicosys" },
-  { id: 2, title: "Magichands Physiotherapy", category: "Web Development", image: "/projects/magichands.jpg", slug: "magichands-physiotherapy" },
-  { id: 3, title: "Inayit", category: "Software Development", image: "/projects/inayit.png", slug: "inayit" },
-  { id: 4, title: "Epyrocxx", category: "Web Development", image: "/projects/epyrocxx.jpg", slug: "epyrocxx" },
-  { id: 5, title: "Cartlane", category: "E-Commerce", image: "/projects/cartlane.png", slug: "cartlane" },
-  { id: 6, title: "3D Tailor Space", category: "3D / Web App", image: "/projects/3d-tailor-space.png", slug: "3d-tailor-space" },
-  { id: 7, title: "SandTGlobal", category: "Web Development", image: "/projects/sandtglobal.jpg", slug: "sandtglobal" },
-  { id: 8, title: "Collins", category: "Web Development", image: "/projects/collins.jpg", slug: "collins" },
-  { id: 9, title: "DentalBay", category: "Healthcare", image: "/projects/dentalbay.jpg", slug: "dentalbay" },
-  { id: 10, title: "Amal Al-Sham", category: "Food", image: "/projects/amal.jpg", slug: "amal-al-sham" },
-  { id: 11, title: "Cilicosys", category: "Software Development", image: "/projects/cilicosys.png", slug: "cilicosys" },
-  { id: 12, title: "Magichands Physiotherapy", category: "Web Development", image: "/projects/magichands.jpg", slug: "magichands-physiotherapy" },
-  { id: 13, title: "Inayit", category: "Software Development", image: "/projects/inayit.png", slug: "inayit" },
-  { id: 14, title: "Epyrocxx", category: "Web Development", image: "/projects/epyrocxx.jpg", slug: "epyrocxx" },
-  { id: 15, title: "Cartlane", category: "E-Commerce", image: "/projects/cartlane.png", slug: "cartlane" },
-  { id: 16, title: "3D Tailor Space", category: "3D / Web App", image: "/projects/3d-tailor-space.png", slug: "3d-tailor-space" },
-  { id: 17, title: "SandTGlobal", category: "Web Development", image: "/projects/sandtglobal.jpg", slug: "sandtglobal" },
-  { id: 18, title: "Collins", category: "Web Development", image: "/projects/collins.jpg", slug: "collins" },
-  { id: 19, title: "DentalBay", category: "Healthcare", image: "/projects/dentalbay.jpg", slug: "dentalbay" },
-  { id: 20, title: "Amal Al-Sham", category: "Food", image: "/projects/amal.jpg", slug: "amal-al-sham" },
+/* ================================================================
+   PROJECT DATA
+   ================================================================ */
+
+const BASE_PROJECTS = [
+  {
+    id: 1,
+    title: "Cilicosys",
+    category: "Software Development",
+    image: "/projects/cilicosys.png",
+    slug: "cilicosys",
+  },
+  {
+    id: 2,
+    title: "Magichands Physiotherapy",
+    category: "Web Development",
+    image: "/projects/magichands.jpg",
+    slug: "magichands-physiotherapy",
+  },
+  {
+    id: 3,
+    title: "Inayit",
+    category: "Software Development",
+    image: "/projects/inayit.png",
+    slug: "inayit",
+  },
+  {
+    id: 4,
+    title: "Epyrocxx",
+    category: "Web Development",
+    image: "/projects/epyrocxx.jpg",
+    slug: "epyrocxx",
+  },
+  {
+    id: 5,
+    title: "Cartlane",
+    category: "E-Commerce",
+    image: "/projects/cartlane.png",
+    slug: "cartlane",
+  },
+  {
+    id: 6,
+    title: "3D Tailor Space",
+    category: "3D / Web App",
+    image: "/projects/3d-tailor-space.png",
+    slug: "3d-tailor-space",
+  },
+  {
+    id: 7,
+    title: "SandTGlobal",
+    category: "Web Development",
+    image: "/projects/sandtglobal.jpg",
+    slug: "sandtglobal",
+  },
+  {
+    id: 8,
+    title: "Collins",
+    category: "Web Development",
+    image: "/projects/collins.jpg",
+    slug: "collins",
+  },
+  {
+    id: 9,
+    title: "DentalBay",
+    category: "Healthcare",
+    image: "/projects/dentalbay.jpg",
+    slug: "dentalbay",
+  },
+  {
+    id: 10,
+    title: "Amal Al-Sham",
+    category: "Food",
+    image: "/projects/amal.jpg",
+    slug: "amal-al-sham",
+  },
 ];
 
-/* ------------------------------------------------------------------ */
-/* 2. Texture atlas — draws every project image into ONE canvas/texture */
-/* ------------------------------------------------------------------ */
-function useAtlasTexture(projects, cellSize = 160) {
+const PROJECTS = Array.from({ length: 30 }, (_, index) => {
+  const project = BASE_PROJECTS[index % BASE_PROJECTS.length];
+  return {
+    ...project,
+    id: index + 1,
+  };
+});
+
+/* ================================================================
+   TUNABLE PHYSICS SETTINGS
+   ================================================================ */
+
+const PHYSICS = {
+  idleMovementStrength: 0.025,
+  idleSpeed: 0.7,
+  interactionRadius: 3.0,
+  interactionForce: 14,
+  mouseVelocityMultiplier: 0.055,
+  fastMovementBoost: 1.8,
+  springStrength: 8.5,
+  damping: 0.86,
+  collisionStrength: 18,
+  collisionRadiusMultiplier: 0.84,
+  maxVelocity: 9,
+  rotationFromVelocity: 0.035,
+  maxRotationSpeed: 0.18,
+  entranceDuration: 1.25,
+  entranceStagger: 0.035,
+  maxDeltaTime: 1 / 30,
+};
+
+/* ================================================================
+   IMAGE ATLAS
+   ================================================================ */
+
+function useAtlasTexture(projects, cellSize = 256) {
   const [texture, setTexture] = useState(null);
   const [atlasMeta, setAtlasMeta] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
+
     const cols = Math.ceil(Math.sqrt(projects.length));
     const rows = Math.ceil(projects.length / cols);
 
@@ -49,6 +133,11 @@ function useAtlasTexture(projects, cellSize = 160) {
     canvas.width = cols * cellSize;
     canvas.height = rows * cellSize;
     const ctx = canvas.getContext("2d");
+
+    if (!ctx) return;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
 
     const loadImage = (src) =>
       new Promise((resolve) => {
@@ -60,97 +149,121 @@ function useAtlasTexture(projects, cellSize = 160) {
       });
 
     (async () => {
-      const images = await Promise.all(projects.map((p) => loadImage(p.image)));
+      const images = await Promise.all(
+        projects.map((project) => loadImage(project.image))
+      );
+
       if (cancelled) return;
 
-      images.forEach((img, i) => {
+      images.forEach((img, index) => {
         if (!img) return;
-        const col = i % cols;
-        const row = Math.floor(i / cols);
+
+        const col = index % cols;
+        const row = Math.floor(index / cols);
         const x = col * cellSize;
         const y = row * cellSize;
 
-        const scale = Math.max(cellSize / img.width, cellSize / img.height);
-        const w = img.width * scale;
-        const h = img.height * scale;
-        const dx = x + (cellSize - w) / 2;
-        const dy = y + (cellSize - h) / 2;
+        const scale = Math.max(
+          cellSize / img.width,
+          cellSize / img.height
+        );
+
+        const width = img.width * scale;
+        const height = img.height * scale;
+
+        const dx = x + (cellSize - width) / 2;
+        const dy = y + (cellSize - height) / 2;
 
         ctx.save();
         ctx.beginPath();
         ctx.rect(x, y, cellSize, cellSize);
         ctx.clip();
-        ctx.drawImage(img, dx, dy, w, h);
+        ctx.drawImage(img, dx, dy, width, height);
         ctx.restore();
       });
 
-      const tex = new THREE.CanvasTexture(canvas);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.minFilter = THREE.LinearFilter;
-      tex.magFilter = THREE.LinearFilter;
-      tex.generateMipmaps = false;
-      tex.needsUpdate = true;
+      const atlas = new THREE.CanvasTexture(canvas);
+      atlas.colorSpace = THREE.SRGBColorSpace;
+      atlas.minFilter = THREE.LinearFilter;
+      atlas.magFilter = THREE.LinearFilter;
+      atlas.generateMipmaps = false;
+      atlas.needsUpdate = true;
 
-      setTexture(tex);
+      setTexture(atlas);
       setAtlasMeta({ cols, rows });
     })();
 
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projects.length, cellSize]);
+  }, [projects]);
 
   return { texture, atlasMeta };
 }
 
-/* ------------------------------------------------------------------ */
-/* 3. Cluster ("bouquet") layout — packed, uneven sphere of bubbles     */
-/* ------------------------------------------------------------------ */
-function useClusterLayout(count, targetRadius = 1.6) {
+/* ================================================================
+   ORGANIC CLUSTER
+   ================================================================ */
+
+function useClusterLayout(count, targetRadius = 2.05) {
   return useMemo(() => {
-    const scale = new Float32Array(count);
-    for (let i = 0; i < count; i++) {
-      scale[i] = 0.34 + Math.random() * 0.22;
-    }
-
+    const radius = new Float32Array(count);
     const home = new Float32Array(count * 3);
-    const golden = Math.PI * (3 - Math.sqrt(5));
+
     for (let i = 0; i < count; i++) {
-      const y = 1 - (i / Math.max(1, count - 1)) * 2;
-      const r = Math.sqrt(Math.max(0, 1 - y * y));
-      const theta = golden * i;
-      const seedR = targetRadius * 0.6;
-      home[i * 3] = Math.cos(theta) * r * seedR;
-      home[i * 3 + 1] = y * seedR;
-      home[i * 3 + 2] = Math.sin(theta) * r * seedR * 0.5;
+      const random = Math.random();
+      if (random < 0.12) {
+        radius[i] = 0.27 + Math.random() * 0.08;
+      } else if (random < 0.85) {
+        radius[i] = 0.38 + Math.random() * 0.16;
+      } else {
+        radius[i] = 0.58 + Math.random() * 0.16;
+      }
     }
 
-    const PAD = 0.02;
-    for (let iter = 0; iter < 400; iter++) {
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+    for (let i = 0; i < count; i++) {
+      const normalized = i / Math.max(1, count - 1);
+      const y = 1 - normalized * 2;
+      const ring = Math.sqrt(Math.max(0, 1 - y * y));
+      const angle = goldenAngle * i;
+      const jitter = 0.78 + Math.random() * 0.35;
+
+      home[i * 3] = Math.cos(angle) * ring * targetRadius * jitter;
+      home[i * 3 + 1] = y * targetRadius * jitter;
+      home[i * 3 + 2] = Math.sin(angle) * ring * targetRadius * 0.42 * jitter;
+    }
+
+    for (let iteration = 0; iteration < 250; iteration++) {
       for (let i = 0; i < count; i++) {
-        const i3 = i * 3;
-        home[i3] *= 0.995;
-        home[i3 + 1] *= 0.995;
-        home[i3 + 2] *= 0.995;
+        home[i * 3] *= 0.994;
+        home[i * 3 + 1] *= 0.994;
+        home[i * 3 + 2] *= 0.994;
       }
+
       for (let i = 0; i < count; i++) {
         for (let j = i + 1; j < count; j++) {
-          const i3 = i * 3,
-            j3 = j * 3;
+          const i3 = i * 3;
+          const j3 = j * 3;
+
           const dx = home[j3] - home[i3];
           const dy = home[j3 + 1] - home[i3 + 1];
           const dz = home[j3 + 2] - home[i3 + 2];
-          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.0001;
-          const minDist = scale[i] + scale[j] + PAD;
-          if (dist < minDist) {
-            const overlap = (minDist - dist) / 2;
-            const nx = dx / dist,
-              ny = dy / dist,
-              nz = dz / dist;
+
+          const distance = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.0001;
+          const minimumDistance = radius[i] + radius[j] - 0.04;
+
+          if (distance < minimumDistance) {
+            const overlap = (minimumDistance - distance) / 2;
+            const nx = dx / distance;
+            const ny = dy / distance;
+            const nz = dz / distance;
+
             home[i3] -= nx * overlap;
             home[i3 + 1] -= ny * overlap;
             home[i3 + 2] -= nz * overlap;
+
             home[j3] += nx * overlap;
             home[j3 + 1] += ny * overlap;
             home[j3 + 2] += nz * overlap;
@@ -159,25 +272,97 @@ function useClusterLayout(count, targetRadius = 1.6) {
       }
     }
 
-    return { home, scale };
+    return { home, radius };
   }, [count, targetRadius]);
 }
 
-/* ------------------------------------------------------------------ */
-/* 4. The instanced bubble field: 1 draw call, static cluster + idle float */
-/*    No pointer repulsion — bubbles hold their formation on hover.     */
-/* ------------------------------------------------------------------ */
-function BubbleField({ projects, onSelect }) {
+/* ================================================================
+   PER BUBBLE PARAMETERS
+   ================================================================ */
+
+function useBubbleParameters(count) {
+  return useMemo(() => {
+    return Array.from({ length: count }, () => ({
+      phaseX: Math.random() * Math.PI * 2,
+      phaseY: Math.random() * Math.PI * 2,
+      phaseZ: Math.random() * Math.PI * 2,
+      speedX: 0.45 + Math.random() * 0.35,
+      speedY: 0.4 + Math.random() * 0.3,
+      speedZ: 0.35 + Math.random() * 0.25,
+      rotation: (Math.random() - 0.5) * 0.02,
+      depth: 0.88 + Math.random() * 0.24,
+    }));
+  }, [count]);
+}
+
+/* ================================================================
+   BUBBLE FIELD
+   ================================================================ */
+
+function BubbleField({ projects, onSelect, pointerActiveRef }) {
   const count = projects.length;
   const meshRef = useRef(null);
-  const { home, scale } = useClusterLayout(count);
+
+  const { home, radius } = useClusterLayout(count);
+  const bubbleParams = useBubbleParameters(count);
   const { texture, atlasMeta } = useAtlasTexture(projects);
+
+  const posX = useRef(null);
+  const posY = useRef(null);
+  const posZ = useRef(null);
+  const velX = useRef(null);
+  const velY = useRef(null);
+  const velZ = useRef(null);
+  const initialized = useRef(false);
+
+  const entranceStart = useRef(null);
+
+  const mouseWorld = useRef(new THREE.Vector3(9999, 9999, 0));
+  const mouseVelocity = useRef(new THREE.Vector2(0, 0));
+  const previousMouse = useRef(new THREE.Vector2(0, 0));
+  const currentMouse = useRef(new THREE.Vector2(0, 0));
+  const mouseHasMoved = useRef(false);
+
+  const raycaster = useMemo(() => new THREE.Raycaster(), []);
+  const plane = useMemo(
+    () => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0),
+    []
+  );
+  const hitPoint = useMemo(() => new THREE.Vector3(), []);
   const dummy = useMemo(() => new THREE.Object3D(), []);
-  const pointerDownRef = useRef(null); // { x, y, instanceId }
+
+  const pointerDownRef = useRef(null);
+
+  useEffect(() => {
+    posX.current = new Float32Array(count);
+    posY.current = new Float32Array(count);
+    posZ.current = new Float32Array(count);
+    velX.current = new Float32Array(count);
+    velY.current = new Float32Array(count);
+    velZ.current = new Float32Array(count);
+
+    for (let i = 0; i < count; i++) {
+      const startOffset = 0.45 + Math.random() * 0.55;
+      posX.current[i] = home[i * 3] + (Math.random() - 0.5) * startOffset;
+      posY.current[i] = home[i * 3 + 1] + (Math.random() - 0.5) * startOffset;
+      posZ.current[i] = home[i * 3 + 2] + (Math.random() - 0.5) * startOffset;
+
+      velX.current[i] = 0;
+      velY.current[i] = 0;
+      velZ.current[i] = 0;
+    }
+
+    entranceStart.current = null;
+    initialized.current = true;
+  }, [count, home]);
 
   const geometry = useMemo(() => {
     const geo = new THREE.SphereGeometry(1, 24, 24);
-    if (!atlasMeta) return geo;
+
+    if (!atlasMeta) {
+      return geo;
+    }
+
     const { cols, rows } = atlasMeta;
     const offset = new Float32Array(count * 2);
     const uvScale = new Float32Array(count * 2);
@@ -185,59 +370,291 @@ function BubbleField({ projects, onSelect }) {
     for (let i = 0; i < count; i++) {
       const col = i % cols;
       const row = Math.floor(i / cols);
+
       offset[i * 2] = col / cols;
       offset[i * 2 + 1] = 1 - (row + 1) / rows;
+
       uvScale[i * 2] = 1 / cols;
       uvScale[i * 2 + 1] = 1 / rows;
     }
-    geo.setAttribute("aUvOffset", new THREE.InstancedBufferAttribute(offset, 2));
-    geo.setAttribute("aUvScale", new THREE.InstancedBufferAttribute(uvScale, 2));
+
+    geo.setAttribute(
+      "aUvOffset",
+      new THREE.InstancedBufferAttribute(offset, 2)
+    );
+    geo.setAttribute(
+      "aUvScale",
+      new THREE.InstancedBufferAttribute(uvScale, 2)
+    );
+
     return geo;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atlasMeta, count]);
 
   const material = useMemo(() => {
     if (!texture) return null;
+
     const mat = new THREE.MeshPhysicalMaterial({
       map: texture,
-      roughness: 0.22,
+      roughness: 0.2,
       metalness: 0.05,
       clearcoat: 1,
-      clearcoatRoughness: 0.15,
-      envMapIntensity: 1.4,
+      clearcoatRoughness: 0.12,
+      transparent: false,
+      envMapIntensity: 1.7,
     });
+
     mat.onBeforeCompile = (shader) => {
       shader.vertexShader = shader.vertexShader
         .replace(
           "#include <common>",
-          `#include <common>
-         attribute vec2 aUvOffset;
-         attribute vec2 aUvScale;`,
+          `
+#include <common>
+attribute vec2 aUvOffset;
+attribute vec2 aUvScale;
+varying vec2 vAtlasUv;
+`
         )
         .replace(
-          "#include <uv_vertex>",
-          `#include <uv_vertex>
-         vec2 sphereUv = normal.xy * 0.5 + 0.5;
-         vMapUv = sphereUv * aUvScale + aUvOffset;`,
+          "#include <normal_vertex>",
+          `
+#include <normal_vertex>
+vec2 sphereUv = vNormal.xy * 0.5 + 0.5;
+vAtlasUv = sphereUv * aUvScale + aUvOffset;
+`
+        );
+
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          "#include <common>",
+          `
+#include <common>
+varying vec2 vAtlasUv;
+`
+        )
+        .replace(
+          "#include <map_fragment>",
+          `
+#ifdef USE_MAP
+vec4 sampledDiffuseColor = texture2D(map, vAtlasUv);
+diffuseColor *= sampledDiffuseColor;
+#endif
+`
         );
     };
+
     return mat;
   }, [texture]);
 
-  useFrame((state) => {
-    if (!meshRef.current) return;
-    const t = state.clock.elapsedTime;
+  useFrame((state, rawDelta) => {
+    if (
+      !meshRef.current ||
+      !initialized.current ||
+      !posX.current ||
+      !posY.current ||
+      !posZ.current ||
+      !velX.current ||
+      !velY.current ||
+      !velZ.current
+    ) {
+      return;
+    }
+
+    const time = state.clock.elapsedTime;
+    const dt = Math.min(rawDelta, PHYSICS.maxDeltaTime);
+
+    if (entranceStart.current === null) {
+      entranceStart.current = time;
+    }
+
+    const entranceElapsed = time - entranceStart.current;
+
+    if (pointerActiveRef.current) {
+      raycaster.setFromCamera(state.pointer, state.camera);
+      const hit = raycaster.ray.intersectPlane(plane, hitPoint);
+      if (hit) {
+        mouseWorld.current.copy(hitPoint);
+      }
+    }
+
+    if (pointerActiveRef.current && mouseHasMoved.current) {
+      const dx = currentMouse.current.x - previousMouse.current.x;
+      const dy = currentMouse.current.y - previousMouse.current.y;
+
+      mouseVelocity.current.x = mouseVelocity.current.x * 0.35 + dx * 0.65;
+      mouseVelocity.current.y = mouseVelocity.current.y * 0.35 + dy * 0.65;
+    } else {
+      mouseVelocity.current.x *= 0.82;
+      mouseVelocity.current.y *= 0.82;
+    }
+
+    previousMouse.current.copy(currentMouse.current);
+
+    const pX = posX.current;
+    const pY = posY.current;
+    const pZ = posZ.current;
+    const vX = velX.current;
+    const vY = velY.current;
+    const vZ = velZ.current;
+
+    const mouseX = mouseWorld.current.x;
+    const mouseY = mouseWorld.current.y;
+    const mouseZ = mouseWorld.current.z;
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
+      const params = bubbleParams[i];
 
-      // tiny idle float only — no reaction to pointer position at all
-      const wobbleX = Math.sin(t * 0.4 + i) * 0.02;
-      const wobbleY = Math.cos(t * 0.33 + i * 1.3) * 0.02;
+      const idleX =
+        Math.sin(
+          time * params.speedX * PHYSICS.idleSpeed + params.phaseX
+        ) * PHYSICS.idleMovementStrength;
 
-      dummy.position.set(home[i3] + wobbleX, home[i3 + 1] + wobbleY, home[i3 + 2]);
-      dummy.rotation.set(t * 0.03 + i, t * 0.025 + i, 0);
-      dummy.scale.setScalar(scale[i]);
+      const idleY =
+        Math.cos(
+          time * params.speedY * PHYSICS.idleSpeed + params.phaseY
+        ) * PHYSICS.idleMovementStrength;
+
+      const idleZ =
+        Math.sin(
+          time * params.speedZ * PHYSICS.idleSpeed + params.phaseZ
+        ) * PHYSICS.idleMovementStrength * 0.65;
+
+      const targetX = home[i3] + idleX;
+      const targetY = home[i3 + 1] + idleY;
+      const targetZ = home[i3 + 2] + idleZ;
+
+      let forceX = (targetX - pX[i]) * PHYSICS.springStrength;
+      let forceY = (targetY - pY[i]) * PHYSICS.springStrength;
+      let forceZ = (targetZ - pZ[i]) * PHYSICS.springStrength;
+
+      if (pointerActiveRef.current) {
+        const dx = pX[i] - mouseX;
+        const dy = pY[i] - mouseY;
+        const dz = pZ[i] - mouseZ;
+
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.0001;
+
+        if (distance < PHYSICS.interactionRadius) {
+          const normalizedDistance = 1 - distance / PHYSICS.interactionRadius;
+          const falloff = normalizedDistance * normalizedDistance;
+
+          const mouseSpeed = Math.sqrt(
+            mouseVelocity.current.x * mouseVelocity.current.x +
+              mouseVelocity.current.y * mouseVelocity.current.y
+          );
+
+          const velocityInfluence =
+            1 + mouseSpeed * PHYSICS.mouseVelocityMultiplier;
+
+          const fastBoost = Math.min(
+            velocityInfluence,
+            PHYSICS.fastMovementBoost
+          );
+
+          const strength =
+            (PHYSICS.interactionForce * falloff * fastBoost) /
+            Math.max(radius[i], 0.1);
+
+          forceX += (dx / distance) * strength;
+          forceY += (dy / distance) * strength;
+          forceZ += (dz / distance) * strength * 0.35;
+        }
+      }
+
+      vX[i] += forceX * dt;
+      vY[i] += forceY * dt;
+      vZ[i] += forceZ * dt;
+    }
+
+    for (let i = 0; i < count; i++) {
+      for (let j = i + 1; j < count; j++) {
+        const dx = pX[j] - pX[i];
+        const dy = pY[j] - pY[i];
+        const dz = pZ[j] - pZ[i];
+
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.0001;
+        const minimumDistance =
+          (radius[i] + radius[j]) * PHYSICS.collisionRadiusMultiplier;
+
+        if (distance < minimumDistance) {
+          const overlap = (minimumDistance - distance) / minimumDistance;
+          const nx = dx / distance;
+          const ny = dy / distance;
+          const nz = dz / distance;
+
+          const push = overlap * PHYSICS.collisionStrength;
+
+          const massA = radius[i] * radius[i];
+          const massB = radius[j] * radius[j];
+          const totalMass = massA + massB;
+
+          const shareA = massB / totalMass;
+          const shareB = massA / totalMass;
+
+          vX[i] -= nx * push * shareA * dt;
+          vY[i] -= ny * push * shareA * dt;
+          vZ[i] -= nz * push * shareA * dt;
+
+          vX[j] += nx * push * shareB * dt;
+          vY[j] += ny * push * shareB * dt;
+          vZ[j] += nz * push * shareB * dt;
+        }
+      }
+    }
+
+    const damping = Math.pow(PHYSICS.damping, dt * 60);
+
+    for (let i = 0; i < count; i++) {
+      vX[i] *= damping;
+      vY[i] *= damping;
+      vZ[i] *= damping;
+
+      const speed = Math.sqrt(vX[i] * vX[i] + vY[i] * vY[i] + vZ[i] * vZ[i]);
+
+      if (speed > PHYSICS.maxVelocity) {
+        const scale = PHYSICS.maxVelocity / speed;
+        vX[i] *= scale;
+        vY[i] *= scale;
+        vZ[i] *= scale;
+      }
+
+      pX[i] += vX[i] * dt;
+      pY[i] += vY[i] * dt;
+      pZ[i] += vZ[i] * dt;
+
+      const delay = i * PHYSICS.entranceStagger;
+      const entranceProgress = THREE.MathUtils.clamp(
+        (entranceElapsed - delay) / PHYSICS.entranceDuration,
+        0,
+        1
+      );
+
+      const eased = 1 - Math.pow(1 - entranceProgress, 3);
+
+      if (entranceProgress < 1) {
+        const startScale = 0.72 + eased * 0.28;
+        dummy.scale.set(
+          radius[i] * startScale,
+          radius[i] * startScale,
+          radius[i] * startScale
+        );
+      } else {
+        dummy.scale.set(radius[i], radius[i], radius[i]);
+      }
+
+      const velocityRotation = vX[i] * PHYSICS.rotationFromVelocity;
+      const rotation = THREE.MathUtils.clamp(
+        velocityRotation,
+        -PHYSICS.maxRotationSpeed,
+        PHYSICS.maxRotationSpeed
+      );
+
+      dummy.position.set(pX[i], pY[i], pZ[i]);
+
+      dummy.rotation.x = time * bubbleParams[i].rotation + rotation * 0.45;
+      dummy.rotation.y = time * bubbleParams[i].rotation * 1.3 + rotation;
+      dummy.rotation.z = rotation * 0.25;
+
       dummy.updateMatrix();
       meshRef.current.setMatrixAt(i, dummy.matrix);
     }
@@ -245,7 +662,9 @@ function BubbleField({ projects, onSelect }) {
     meshRef.current.instanceMatrix.needsUpdate = true;
   });
 
-  if (!material || !atlasMeta) return null;
+  if (!material || !atlasMeta) {
+    return null;
+  }
 
   return (
     <instancedMesh
@@ -264,6 +683,7 @@ function BubbleField({ projects, onSelect }) {
         e.stopPropagation();
         const down = pointerDownRef.current;
         pointerDownRef.current = null;
+
         if (!down || down.instanceId == null) return;
 
         const dx = e.clientX - down.x;
@@ -278,35 +698,71 @@ function BubbleField({ projects, onSelect }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* 5. Public component                                                 */
-/* ------------------------------------------------------------------ */
+/* ================================================================
+   MAIN COMPONENT
+   ================================================================ */
+
 export default function ProjectBubbles({ projects }) {
   const list = useMemo(() => projects ?? PROJECTS, [projects]);
   const router = useRouter();
+  const pointerActiveRef = useRef(false);
+  const lastPointer = useRef({ x: 0, y: 0 });
+
+  const handlePointerMove = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    lastPointer.current = { x, y };
+    pointerActiveRef.current = true;
+  };
 
   const handleSelect = (project) => {
     router.push(`/projects/${project.slug}`);
   };
 
   return (
-    <div className={styles.wrapper}>
+    <section
+      className={styles.wrapper}
+      onPointerEnter={() => {
+        pointerActiveRef.current = true;
+      }}
+      onPointerMove={handlePointerMove}
+      onPointerDown={() => {
+        pointerActiveRef.current = true;
+      }}
+      onPointerLeave={() => {
+        pointerActiveRef.current = false;
+      }}
+      onPointerCancel={() => {
+        pointerActiveRef.current = false;
+      }}
+    >
+
       <Canvas
         className={styles.canvas}
         dpr={[1, 1.5]}
-        camera={{ position: [0, 0, 8], fov: 42 }}
+        camera={{
+          position: [0, 0, 7],
+          fov: 42,
+        }}
         gl={{
           antialias: true,
           alpha: true,
           powerPreference: "high-performance",
         }}
       >
-        <ambientLight intensity={1.6} />
-        <directionalLight position={[5, 5, 5]} intensity={2.2} />
-        <pointLight position={[-5, 2, 4]} intensity={2} distance={15} />
-        <Environment preset="apartment" resolution={64} />
-        <BubbleField projects={list} onSelect={handleSelect} />
+        <ambientLight intensity={1.5} />
+        <directionalLight position={[4, 5, 6]} intensity={2.4} />
+        <pointLight position={[-4, 2, 4]} intensity={2} distance={15} />
+        <Environment preset="studio" resolution={64} />
+
+        <BubbleField
+          projects={list}
+          onSelect={handleSelect}
+          pointerActiveRef={pointerActiveRef}
+        />
       </Canvas>
-    </div>
+    </section>
   );
 }

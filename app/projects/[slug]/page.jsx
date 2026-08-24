@@ -2,9 +2,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import {
+  ClipboardCheck,
+  Monitor,
+  Code2,
+  FlaskConical,
+  Cloud,
+  ArrowLeft,
+} from "lucide-react";
 import { PROJECTS, getProjectBySlug } from "../../../data/projectsData";
+import styles from "./ProjectDetail.module.css";
 
-// Pre-renders /projects/cilicosys, /projects/inayit, etc. at build time
 export function generateStaticParams() {
   return PROJECTS.map((p) => ({ slug: p.slug }));
 }
@@ -20,11 +28,31 @@ export async function generateMetadata({ params }) {
 }
 
 const STEPS = [
-  { title: "Requirement Analysis", text: "Understood business goals, user needs, and market requirements." },
-  { title: "UI/UX Design", text: "Designed intuitive and engaging interfaces for web and mobile." },
-  { title: "Development", text: "Built scalable and secure web and mobile applications with modern technologies." },
-  { title: "Testing", text: "Performed functional, performance, and security testing." },
-  { title: "Deployment", text: "Deployed on cloud with monitoring and continuous support." },
+  {
+    title: "Requirement Analysis",
+    text: "Understood business goals, user needs, and market requirements.",
+    icon: ClipboardCheck,
+  },
+  {
+    title: "UI/UX Design",
+    text: "Designed intuitive and engaging interfaces for web and mobile.",
+    icon: Monitor,
+  },
+  {
+    title: "Development",
+    text: "Built scalable and secure web and mobile applications with modern technologies.",
+    icon: Code2,
+  },
+  {
+    title: "Testing",
+    text: "Performed functional, performance, and security testing.",
+    icon: FlaskConical,
+  },
+  {
+    title: "Deployment",
+    text: "Deployed on cloud with monitoring and continuous support.",
+    icon: Cloud,
+  },
 ];
 
 export default async function ProjectDetailPage({ params }) {
@@ -33,90 +61,104 @@ export default async function ProjectDetailPage({ params }) {
   if (!project) notFound();
 
   return (
-    <main>
+    <main className={styles.main}>
       {/* Hero */}
-      <section className="bg-black text-white rounded-b-[64px] px-6 md:px-16 lg:px-24 pt-12 pb-24 md:pb-32">
-        <Link
-          href="/projects"
-          className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white"
-        >
-          ← Back to Projects
+      <section className={styles.hero}>
+        <Link href="/" className={styles.backLink}>
+          <ArrowLeft size={16} />
+          Back to Projects
         </Link>
 
-        <span className="inline-block mt-10 px-4 py-1.5 text-xs tracking-wide border border-lime-400 text-lime-400 rounded-full">
+        <span className={styles.badge}>
+          <Code2 size={14} />
           {project.badge}
         </span>
 
-        <div className="mt-12 grid md:grid-cols-2 gap-14 md:gap-20 items-center">
+        <div className={styles.heroGrid}>
+          {/* Text column */}
           <div>
-            <h1 className="text-5xl md:text-6xl font-serif leading-tight">
-              {project.title}
-            </h1>
-            <p className="mt-8 italic text-lg text-white/80 leading-relaxed">
-              {project.tagline}
-            </p>
-            <p className="mt-6 text-white/70 leading-relaxed max-w-md">
-              {project.description}
-            </p>
+            <h1 className={styles.heroTitle}>{project.title}</h1>
+            <p className={styles.heroTagline}>{project.tagline}</p>
+            <p className={styles.heroDescription}>{project.description}</p>
+            {project.liveUrl && (
+  <a
+    href={project.liveUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    className={styles.liveButton}
+  >
+    Visit Live Site
+  </a>
+)}
           </div>
 
-          {project.heroImage && (
-            <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-white/5">
+          {/* Image column */}
+          {project.heroImage ? (
+            <div className={styles.heroImageWrap}>
               <Image
                 src={project.heroImage}
                 alt={project.title}
                 fill
-                className="object-contain"
+                style={{ objectFit: "contain" }}
                 sizes="(max-width: 768px) 100vw, 50vw"
+                priority
               />
+            </div>
+          ) : (
+            <div className={styles.heroImagePlaceholder}>
+              Image coming soon
             </div>
           )}
         </div>
       </section>
 
       {/* About */}
-      <section className="bg-gray-50 px-6 md:px-16 lg:px-24 py-24 md:py-28 text-center">
-        <h2 className="text-3xl md:text-4xl font-serif mb-8">About the Project</h2>
-        <p className="max-w-3xl mx-auto text-gray-600 leading-loose">
-          {project.about}
-        </p>
+      <section className={styles.about}>
+        <h2 className={styles.sectionTitle}>About the Project</h2>
+        <p className={styles.aboutText}>{project.about}</p>
       </section>
 
       {/* Key Features */}
-      <section className="px-6 md:px-16 lg:px-24 py-24 md:py-28">
-        <h2 className="text-3xl md:text-4xl font-serif text-center mb-16">
+      <section className={styles.features}>
+        <h2 className={`${styles.sectionTitle} ${styles.featuresTitle}`}>
           Key Features
         </h2>
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {project.features.map((f) => (
-            <div
-              key={f.title}
-              className="bg-gray-50 rounded-2xl p-8 flex flex-col gap-3"
-            >
-              <h3 className="font-semibold text-lg">{f.title}</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">{f.text}</p>
-            </div>
-          ))}
+        <div className={styles.featuresGrid}>
+          {project.features.map((f) => {
+            const FeatureIcon = f.icon;
+            return (
+              <div key={f.title} className={styles.featureCard}>
+                {FeatureIcon && (
+                  <div className={styles.featureIcon}>
+                    <FeatureIcon size={20} />
+                  </div>
+                )}
+                <h3 className={styles.featureCardTitle}>{f.title}</h3>
+                <p className={styles.featureCardText}>{f.text}</p>
+              </div>
+            );
+          })}
         </div>
       </section>
 
       {/* What We Did */}
-      <section className="px-6 md:px-16 lg:px-24 pb-32 pt-8">
-        <h2 className="text-3xl md:text-4xl font-serif text-center mb-20">
+      <section className={styles.steps}>
+        <h2 className={`${styles.sectionTitle} ${styles.stepsTitle}`}>
           What We Did
         </h2>
-        <div className="grid md:grid-cols-5 gap-10 md:gap-8 max-w-6xl mx-auto text-center">
-          {STEPS.map((s) => (
-            <div key={s.title} className="flex flex-col items-center">
-              <div className="mb-6 w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-                <span className="text-2xl">•</span>
+        <div className={styles.stepsInner}>
+          <div className={styles.connectorLine} />
+          <div className={styles.stepsGrid}>
+            {STEPS.map((s) => (
+              <div key={s.title} className={styles.stepItem}>
+                <div className={styles.stepIconCircle}>
+                  <s.icon size={22} />
+                </div>
+                <h3 className={styles.stepTitle}>{s.title}</h3>
+                <p className={styles.stepText}>{s.text}</p>
               </div>
-              <h3 className="font-semibold mb-3">{s.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed max-w-[180px]">
-                {s.text}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
     </main>

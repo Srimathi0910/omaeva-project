@@ -1,0 +1,372 @@
+/* app/projects/[slug]/ProjectDetail.module.css */
+
+.main {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* ============================= */
+/* HERO */
+/* ============================= */
+
+.hero {
+  background: #000;
+  color: #fff;
+  border-bottom-left-radius: 64px;
+  border-bottom-right-radius: 64px;
+  padding: 40px 24px 96px;
+}
+
+@media (min-width: 768px) {
+  .hero {
+    padding-left: 64px;
+    padding-right: 64px;
+    padding-bottom: 128px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero {
+    padding-left: 96px;
+    padding-right: 96px;
+  }
+}
+
+.backLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  gap: 10px;
+}
+
+.backLink:hover {
+  color: #fff;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 40px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  border: 1px solid #a3e635;
+  color: #a3e635;
+  border-radius: 9999px;
+}
+.liveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 28px;
+  padding: 12px 24px;
+  background: #800080;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.liveButton:hover {
+  background: #6a006a;
+  transform: translateY(-2px);
+}
+
+.heroGrid {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .heroGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heroGrid {
+    gap: 80px;
+  }
+}
+
+.heroTitle {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 48px;
+  line-height: 1.1;
+}
+
+@media (min-width: 768px) {
+  .heroTitle {
+    font-size: 60px;
+  }
+}
+
+.heroTagline {
+  margin-top: 32px;
+  font-style: italic;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+}
+
+.heroDescription {
+  margin-top: 24px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  max-width: 28rem;
+}
+
+.heroImageWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.heroImagePlaceholder {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+}
+
+/* ============================= */
+/* ABOUT */
+/* ============================= */
+
+.about {
+  background: #f9fafb;
+  padding: 16px 24px;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .about {
+    padding-left: 64px;
+    padding-right: 64px;
+    padding-top: 112px;
+    padding-bottom: 112px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .about {
+    padding-left: 96px;
+    padding-right: 96px;
+  }
+}
+
+.sectionTitle {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30px;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 768px) {
+  .sectionTitle {
+    font-size: 36px;
+  }
+}
+
+.aboutText {
+  max-width: 48rem;
+  margin: 0 auto;
+  color: #4b5563;
+  line-height: 2;
+}
+
+/* ============================= */
+/* KEY FEATURES */
+/* ============================= */
+
+.features {
+  padding: 16px 24px;
+}
+
+@media (min-width: 768px) {
+  .features {
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .features {
+    padding-left: 96px;
+    padding-right: 96px;
+  }
+}
+
+.featuresTitle {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  max-width: 64rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .featuresGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+}
+
+.featureCard {
+  background: #f9fafb;
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.featureIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #ecfccb;
+  color: #65a30d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.featureCardTitle {
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.featureCardText {
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ============================= */
+/* WHAT WE DID */
+/* ============================= */
+
+.steps {
+  padding: 32px 24px 128px;
+}
+
+@media (min-width: 768px) {
+  .steps {
+    padding-left: 64px;
+    padding-right: 64px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .steps {
+    padding-left: 96px;
+    padding-right: 96px;
+  }
+}
+
+.stepsTitle {
+  text-align: center;
+  margin-bottom: 80px;
+}
+
+.stepsInner {
+  position: relative;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.connectorLine {
+  display: none;
+  position: absolute;
+  top: 32px;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+@media (min-width: 768px) {
+  .connectorLine {
+    display: block;
+  }
+}
+
+.stepsGrid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  row-gap: 48px;
+  column-gap: 24px;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .stepsGrid {
+    grid-template-columns: repeat(5, 1fr);
+    column-gap: 32px;
+  }
+}
+
+.stepItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stepIconCircle {
+  margin-bottom: 24px;
+  width: 64px;
+  height: 64px;
+  border-radius: 9999px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.stepIconCircle svg {
+  color: #6b7280;
+}
+
+.stepTitle {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.stepText {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+  max-width: 180px;
+}

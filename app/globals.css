@@ -45,6 +45,11 @@ body {
   overflow-x: hidden;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 /* ============================= */
 /* MAIN PAGE */
 /* ============================= */
