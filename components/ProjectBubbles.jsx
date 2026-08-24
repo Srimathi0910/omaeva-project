@@ -299,13 +299,23 @@ function useBubbleParameters(count) {
    BUBBLE FIELD
    ================================================================ */
 
-function BubbleField({ projects, onSelect, pointerActiveRef }) {
-  const count = projects.length;
+function BubbleField({
+  projects,
+  onSelect,
+  pointerActiveRef,
+  onLoadingChange,
+}) {  const count = projects.length;
   const meshRef = useRef(null);
 
   const { home, radius } = useClusterLayout(count);
   const bubbleParams = useBubbleParameters(count);
   const { texture, atlasMeta } = useAtlasTexture(projects);
+  useEffect(() => {
+  const loading = !texture || !atlasMeta;
+
+  onLoadingChange?.(loading);
+}, [texture, atlasMeta, onLoadingChange]);
+
 
   const posX = useRef(null);
   const posY = useRef(null);
@@ -707,6 +717,7 @@ export default function ProjectBubbles({ projects }) {
   const router = useRouter();
   const pointerActiveRef = useRef(false);
   const lastPointer = useRef({ x: 0, y: 0 });
+  const [isLoading, setIsLoading] = useState(true);
 
   const handlePointerMove = (event) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -723,35 +734,40 @@ export default function ProjectBubbles({ projects }) {
 
   return (
     <section
-      className={styles.wrapper}
-      onPointerEnter={() => {
-        pointerActiveRef.current = true;
-      }}
-      onPointerMove={handlePointerMove}
-      onPointerDown={() => {
-        pointerActiveRef.current = true;
-      }}
-      onPointerLeave={() => {
-        pointerActiveRef.current = false;
-      }}
-      onPointerCancel={() => {
-        pointerActiveRef.current = false;
-      }}
-    >
+  className={styles.wrapper}
+  onPointerEnter={() => {
+    pointerActiveRef.current = true;
+  }}
+  onPointerMove={handlePointerMove}
+  onPointerDown={() => {
+    pointerActiveRef.current = true;
+  }}
+  onPointerLeave={() => {
+    pointerActiveRef.current = false;
+  }}
+  onPointerCancel={() => {
+    pointerActiveRef.current = false;
+  }}
+>
+  {isLoading && (
+    <div className={styles.loader}>
+      <div className={styles.spinner}></div>
+    </div>
+  )}
 
-      <Canvas
-        className={styles.canvas}
-        dpr={[1, 1.5]}
-        camera={{
-          position: [0, 0, 7],
-          fov: 42,
-        }}
-        gl={{
-          antialias: true,
-          alpha: true,
-          powerPreference: "high-performance",
-        }}
-      >
+  <Canvas
+    className={styles.canvas}
+    dpr={[1, 1.5]}
+    camera={{
+      position: [0, 0, 7],
+      fov: 42,
+    }}
+    gl={{
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance",
+    }}
+  >
         <ambientLight intensity={1.5} />
         <directionalLight position={[4, 5, 6]} intensity={2.4} />
         <pointLight position={[-4, 2, 4]} intensity={2} distance={15} />
@@ -761,6 +777,7 @@ export default function ProjectBubbles({ projects }) {
           projects={list}
           onSelect={handleSelect}
           pointerActiveRef={pointerActiveRef}
+           onLoadingChange={setIsLoading}
         />
       </Canvas>
     </section>

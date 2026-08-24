@@ -16,6 +16,8 @@
   padding: 40px 24px 96px;
 }
 
+
+
 @media (min-width: 768px) {
   .hero {
     padding-left: 64px;
@@ -368,4 +370,61 @@
   color: #6b7280;
   line-height: 1.6;
   max-width: 180px;
+}
+.wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  height: 560px;
+  margin: 0 auto;
+}
+
+.canvas {
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+}
+
+/* ============================= */
+/* BUBBLE LOADER */
+/* ============================= */
+
+.loader {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 14px;
+
+  background: #fff;
+  border-radius: 16px;
+}
+
+.spinner {
+  width: 42px;
+  height: 42px;
+
+  border: 3px solid #e5e7eb;
+  border-top-color: #800080;
+
+  border-radius: 50%;
+
+  animation: spin 0.8s linear infinite;
+}
+
+.loader span {
+  font-size: 14px;
+  color: #6b7280;
+  letter-spacing: 0.02em;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
