@@ -90,8 +90,8 @@ const PHYSICS = {
  * --------------------------------------------------
  */
 function getDeviceBubbleScale(width) {
-  if (width < 400) return 0.75; // very small phones
-  if (width < 640) return 0.85; // phones
+  if (width < 400) return 1.75; // very small phones
+  if (width < 640) return 1.05; // phones
   if (width < 768) return 0.72; // large phones / small tablets
   if (width < 1024) return 0.85; // tablets
   if (width < 1440) return 1.0; // laptops / desktops
@@ -1060,7 +1060,10 @@ export default function GlassBubbles() {
           );
 
           const push =
-            PHYSICS.explosionStrength * pushFade * distanceFade * explosionScale;
+            PHYSICS.explosionStrength *
+            pushFade *
+            distanceFade *
+            explosionScale;
 
           data.vx += data.explosionDirX * push * deltaTime;
 
@@ -1329,7 +1332,7 @@ export default function GlassBubbles() {
 
           const effectiveRadius = data.radius * data.baseScale;
 
-const overflowFactor = 1.0;
+          const overflowFactor = 1.0;
           const maxY =
             (visibleHeight / 2) * overflowFactor - effectiveRadius - 0.2;
 
