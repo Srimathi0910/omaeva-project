@@ -1,2006 +1,1786 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment } from "@react-three/drei";
-import * as THREE from "three";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./Projectbubbles.module.css";
+import * as THREE from "three";
 
-/* ================================================================
-   PROJECT DATA
-================================================================ */
-
-const BASE_PROJECTS = [
+const PROJECTS = [
+  { image: "/projects/inayit.png", slug: "inayit", title: "Inayit" },
+  { image: "/projects/cilicosys.png", slug: "cilicosys", title: "Cilicosys" },
   {
-    id: 1,
-    title: "Cilicosys",
-    category: "Software Development",
-    image: "/projects/temp.jpg",
-    slug: "cilicosys",
-  },
-  {
-    id: 2,
-    title: "Magichands Physiotherapy",
-    category: "Web Development",
     image: "/projects/magichands.jpg",
     slug: "magichands-physiotherapy",
+    title: "Magichands Physiotherapy",
   },
   {
-    id: 3,
-    title: "Inayit",
-    category: "Software Development",
-    image: "/projects/inayit.png",
-    slug: "inayit",
-  },
-  {
-    id: 4,
-    title: "Epyrocxx",
-    category: "Web Development",
-    image: "/projects/epyrocxx.jpg",
-    slug: "epyrocxx",
-  },
-  {
-    id: 5,
-    title: "Cartlane",
-    category: "E-Commerce",
-    image: "/projects/cartlane.png",
-    slug: "cartlane",
-  },
-  {
-    id: 6,
-    title: "3D Tailor Space",
-    category: "3D / Web App",
-    // image: "/projects/3d-tailor-space.png",
-        image: "/projects/magichands.jpg",
-
+    image: "/projects/3d-tailor-space.png",
     slug: "3d-tailor-space",
+    title: "3D Tailor Space",
   },
+  { image: "/projects/cartlane.png", slug: "cartlane", title: "Cartlane" },
   {
-    id: 7,
-    title: "SandTGlobal",
-    category: "Web Development",
     image: "/projects/sandtglobal.jpg",
     slug: "sandtglobal",
+    title: "SandTGlobal",
   },
-  {
-    id: 8,
-    title: "Collins",
-    category: "Web Development",
-    image: "/projects/collins.jpg",
-    slug: "collins",
-  },
-  {
-    id: 9,
-    title: "DentalBay",
-    category: "Healthcare",
-    image: "/projects/dentalbay.jpg",
-    slug: "dentalbay",
-  },
-  {
-    id: 10,
-    title: "Amal Al-Sham",
-    category: "Food",
-    image: "/projects/amal.jpg",
-    slug: "amal-al-sham",
-  },
+  { image: "/projects/collins.jpg", slug: "collins", title: "Collins" },
+  { image: "/projects/dentalbay.jpg", slug: "dentalbay", title: "DentalBay" },
+  { image: "/projects/amal.jpg", slug: "amal-al-sham", title: "Amal Al-Sham" },
+  { image: "/projects/epyrocxx.jpg", slug: "epyrocxx", title: "Epyrocxx" },
 ];
 
-const PROJECTS = Array.from(
-  { length: 20 },
-  (_, index) => {
-    const project =
-      BASE_PROJECTS[index % BASE_PROJECTS.length];
-
-    return {
-      ...project,
-      id: index + 1,
-    };
-  }
-);
-
-/* ================================================================
-   PHYSICS
-================================================================ */
-
 const PHYSICS = {
-  idleMovementStrength: 0.028,
-  idleSpeed: 0.7,
+  bubbleCount: 20,
 
-  interactionRadius: 3.0,
-  interactionForce: 14,
+  // How wide the cluster/wander fans out, in radians.
+  // Math.PI * 2 = full 360° circle, Math.PI = 180° (half), Math.PI / 2 = 90°.
+  spreadAngle: Math.PI,
 
-  mouseVelocityMultiplier: 0.055,
-  fastMovementBoost: 1.8,
+  // Normal floating motion
+  springStrength: 2.4,
+  damping: 0.9,
+  maxVelocity: 6,
 
-  springStrength: 8.5,
-  damping: 0.86,
+  wanderStep: 0.18,
+  wanderChangeInterval: [2.2, 4.5],
 
-  collisionStrength: 18,
-  collisionRadiusMultiplier: 0.84,
+  // Mouse interaction
+  // Mouse interaction
+hoverRadius: 20.2,
+hoverForce: 90,
 
-  maxVelocity: 5,
+  // Bubble collision
+  collisionStrength: 10,
+  collisionRadiusMultiplier: 0.94,
+  collisionSolverIterations: 3,
 
-  rotationFromVelocity: 0.035,
-  maxRotationSpeed: 0.18,
+  // Cluster
+  cohesionStrength: 3.8,
+  cohesionRadius: 2.1,
 
-  entranceDuration: 1.25,
-  entranceStagger: 0.035,
+  // CLICK EXPLOSION
+  explosionRadius: 5.8,
+  explosionStrength: 30,
+  explosionOutwardVelocity: 11,
+  explosionMaxVelocity: 42,
+  explosionVelocityDamping: 0.998,
+
+  // Selected bubble
+  selectedScale: 1.7,
+  selectedForward: 4.0,
+  selectedCenterStrength: 11,
+  selectedAttraction: 8,
+
+  // Animation
+  explosionDamping: 0.965,
+  selectedLerp: 0.1,
+  explosionLerp: 0.075,
+
+  navigateDelay: 850,
 
   maxDeltaTime: 1 / 30,
-
-  /* ============================================================
-     CLICK ANIMATION
-  ============================================================ */
-
-  selectedPushRadius: 5.5,
-  selectedPushStrength: 10,
-
-  selectedBubbleScale: 1.25,
-
-  explosionVelocity: 1.8,
-
-  selectedHoldTime: 0.75,
-
-  selectedCenterStrength: 5.5,
-
-  escapeStrength: 18,
-  escapeFalloffDistance: 6.5,
-  escapeTravelDistance: 8,
 };
 
-/* ================================================================
-   IMAGE ATLAS
-================================================================ */
+function createHighlightMesh(size) {
+  const geometry = new THREE.CircleGeometry(size, 24);
 
-function useAtlasTexture(projects, cellSize = 512) {
-  const [texture, setTexture] =
-    useState(null);
+  const material = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
 
-  const [atlasMeta, setAtlasMeta] =
-    useState(null);
+    fragmentShader: `
+      varying vec2 vUv;
+
+      void main() {
+        float d = distance(vUv, vec2(0.5)) * 2.0;
+        float alpha = smoothstep(1.0, 0.0, d);
+
+        gl_FragColor = vec4(
+          1.0,
+          1.0,
+          1.0,
+          alpha * 0.85
+        );
+      }
+    `,
+
+    vertexShader: `
+      varying vec2 vUv;
+
+      void main() {
+        vUv = uv;
+
+        gl_Position =
+          projectionMatrix *
+          modelViewMatrix *
+          vec4(position, 1.0);
+      }
+    `,
+  });
+
+  return new THREE.Mesh(geometry, material);
+}
+
+function domeSurfacePoint(
+  radius,
+  bulgeRatio,
+  normalizedRadius,
+  theta,
+  liftFactor = 1.015,
+) {
+  const bulgeHeight = radius * bulgeRatio;
+
+  const sphereRadius =
+    (radius * radius + bulgeHeight * bulgeHeight) /
+    (2 * bulgeHeight);
+
+  const radialDistance = normalizedRadius * radius;
+
+  const z =
+    Math.sqrt(
+      Math.max(
+        sphereRadius * sphereRadius -
+          radialDistance * radialDistance,
+        0,
+      ),
+    ) -
+    (sphereRadius - bulgeHeight);
+
+  return [
+    radialDistance * Math.cos(theta) * liftFactor,
+    radialDistance * Math.sin(theta) * liftFactor,
+    z * liftFactor + radius * 0.01,
+  ];
+}
+
+function createFallbackTexture() {
+  const canvas = document.createElement("canvas");
+
+  canvas.width = 8;
+  canvas.height = 8;
+
+  const context = canvas.getContext("2d");
+
+  if (context) {
+    const gradient = context.createLinearGradient(0, 0, 8, 8);
+
+    gradient.addColorStop(0, "#999");
+    gradient.addColorStop(1, "#333");
+
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 8, 8);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+
+  texture.colorSpace = THREE.SRGBColorSpace;
+
+  return texture;
+}
+
+export default function GlassBubbles() {
+  const mountRef = useRef(null);
+
+  const router = useRouter();
 
   useEffect(() => {
-    let cancelled = false;
+    const mount = mountRef.current;
 
-    const cols = Math.ceil(
-      Math.sqrt(projects.length)
-    );
-
-    const rows = Math.ceil(
-      projects.length / cols
-    );
-
-    const canvas =
-      document.createElement("canvas");
-
-    canvas.width =
-      cols * cellSize;
-
-    canvas.height =
-      rows * cellSize;
-
-    const ctx =
-      canvas.getContext("2d");
-
-    if (!ctx) {
+    if (!mount) {
       return;
     }
 
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
+    let width = mount.clientWidth;
+    let height = mount.clientHeight;
 
-    const loadImage = (src) =>
-      new Promise((resolve) => {
-        const img =
-          new Image();
+    const scene = new THREE.Scene();
 
-        img.crossOrigin =
-          "anonymous";
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      width / height,
+      0.1,
+      100,
+    );
 
-        img.onload = () =>
-          resolve(img);
+    camera.position.set(0, 0, 15);
 
-        img.onerror = () =>
-          resolve(null);
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+    });
 
-        img.src = src;
-      });
+    renderer.setSize(width, height);
 
-    (async () => {
-      const images =
-        await Promise.all(
-          projects.map((project) =>
-            loadImage(project.image)
-          )
-        );
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, 2),
+    );
 
-      if (cancelled) {
-        return;
-      }
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-      images.forEach(
-        (img, index) => {
-          if (!img) {
-            return;
-          }
+    mount.appendChild(renderer.domElement);
 
-          const col =
-            index % cols;
+    /*
+     * --------------------------------------------------
+     * LIGHTING
+     * --------------------------------------------------
+     */
 
-          const row =
-            Math.floor(
-              index / cols
-            );
+    const hemisphereLight = new THREE.HemisphereLight(
+      0xffffff,
+      0x17051f,
+      1.4,
+    );
 
-          const x =
-            col * cellSize;
+    scene.add(hemisphereLight);
 
-          const y =
-            row * cellSize;
+    const keyLight = new THREE.DirectionalLight(
+      0xffffff,
+      1.7,
+    );
 
-          /*
-           * Cover image into atlas cell.
-           */
+    keyLight.position.set(6, 9, 10);
 
-          const scale =
-            Math.max(
-              cellSize / img.width,
-              cellSize / img.height
-            );
+    scene.add(keyLight);
 
-          const width =
-            img.width * scale;
+    const rimLight = new THREE.DirectionalLight(
+      0x9fc0ff,
+      1.0,
+    );
 
-          const height =
-            img.height * scale;
+    rimLight.position.set(-8, -3, -5);
 
-          const dx =
-            x +
-            (cellSize - width) /
-              2;
+    scene.add(rimLight);
 
-          const dy =
-            y +
-            (cellSize - height) /
-              2;
+    const fillLight = new THREE.PointLight(
+      0xffffff,
+      1.0,
+      60,
+    );
 
-          ctx.save();
+    fillLight.position.set(-3, 3, 9);
 
-          ctx.beginPath();
+    scene.add(fillLight);
 
-          ctx.rect(
-            x,
-            y,
-            cellSize,
-            cellSize
+    /*
+     * --------------------------------------------------
+     * BUBBLES
+     * --------------------------------------------------
+     */
+
+    const textureLoader = new THREE.TextureLoader();
+
+    textureLoader.crossOrigin = "anonymous";
+
+    const bubbles = [];
+
+    const domeMeshes = [];
+
+    const count = PHYSICS.bubbleCount;
+
+    const bulge = 0.92;
+
+    for (let i = 0; i < count; i++) {
+      const project = PROJECTS[i % PROJECTS.length];
+
+      const radius =
+        1.35 + Math.random() * 0.40;
+
+      const group = new THREE.Group();
+
+      /*
+       * Glass material
+       */
+
+      const material =
+        new THREE.MeshPhysicalMaterial({
+          roughness: 0.28,
+          metalness: 0,
+          clearcoat: 1,
+          clearcoatRoughness: 0.08,
+          reflectivity: 0.8,
+          ior: 1.42,
+
+          transparent: true,
+          opacity: 0.98,
+        });
+
+      /*
+       * Shader enhancement
+       */
+
+      material.onBeforeCompile = (shader) => {
+        shader.uniforms.uTime = {
+          value: 0,
+        };
+
+        shader.uniforms.uHover = {
+          value: 0,
+        };
+
+        shader.vertexShader = `
+          varying vec3 vWorldPosition;
+          varying vec3 vNormalWorld;
+          varying vec2 vBubbleUv;
+
+          uniform float uTime;
+          uniform float uHover;
+
+        ` + shader.vertexShader;
+
+        shader.vertexShader =
+          shader.vertexShader.replace(
+            "#include <begin_vertex>",
+            `
+              #include <begin_vertex>
+
+              vBubbleUv = uv;
+
+              vec4 worldPosition =
+                modelMatrix *
+                vec4(transformed, 1.0);
+
+              vWorldPosition = worldPosition.xyz;
+
+              vNormalWorld =
+                normalize(
+                  mat3(modelMatrix) *
+                  transformedNormal
+                );
+            `,
           );
 
-          ctx.clip();
+        shader.fragmentShader = `
+          varying vec3 vWorldPosition;
+          varying vec3 vNormalWorld;
+          varying vec2 vBubbleUv;
 
-          ctx.drawImage(
-            img,
-            dx,
-            dy,
-            width,
-            height
+          uniform float uTime;
+          uniform float uHover;
+
+        ` + shader.fragmentShader;
+
+        shader.fragmentShader =
+          shader.fragmentShader.replace(
+            "#include <dithering_fragment>",
+            `
+              #include <dithering_fragment>
+
+              float fresnel =
+                pow(
+                  1.0 -
+                  abs(
+                    dot(
+                      normalize(vNormalWorld),
+                      normalize(
+                        cameraPosition -
+                        vWorldPosition
+                      )
+                    )
+                  ),
+                  3.0
+                );
+
+              float shimmer =
+                sin(
+                  vBubbleUv.x * 12.0 +
+                  vBubbleUv.y * 10.0 +
+                  uTime * 1.5
+                ) * 0.5 + 0.5;
+
+              vec3 glassGlow =
+                vec3(1.0);
+
+              float glowStrength =
+                fresnel * 0.38 +
+                shimmer * uHover * 0.18;
+
+              gl_FragColor.rgb +=
+                glassGlow *
+                glowStrength;
+            `,
           );
 
-          ctx.restore();
-        }
+        material.userData.shader = shader;
+      };
+
+      /*
+       * Texture
+       */
+
+      let texture = textureLoader.load(
+        project.image,
+        (loadedTexture) => {
+          loadedTexture.colorSpace =
+            THREE.SRGBColorSpace;
+
+          material.map = loadedTexture;
+
+          material.needsUpdate = true;
+        },
+        undefined,
+        () => {
+          texture = createFallbackTexture();
+
+          material.map = texture;
+
+          material.needsUpdate = true;
+        },
       );
 
-      const atlas =
-        new THREE.CanvasTexture(
-          canvas
-        );
-
-      atlas.colorSpace =
+      texture.colorSpace =
         THREE.SRGBColorSpace;
 
-      atlas.minFilter =
-        THREE.LinearMipmapLinearFilter;
+      material.map = texture;
 
-      atlas.magFilter =
-        THREE.LinearFilter;
+      /*
+       * Sphere
+       */
 
-      atlas.generateMipmaps =
-        true;
+      const geometry =
+        new THREE.SphereGeometry(
+          radius,
+          48,
+          48,
+        );
 
-      atlas.anisotropy = 4;
-
-      atlas.wrapS =
-        THREE.ClampToEdgeWrapping;
-
-      atlas.wrapT =
-        THREE.ClampToEdgeWrapping;
-
-      atlas.needsUpdate =
-        true;
-
-      setTexture(atlas);
-
-      setAtlasMeta({
-        cols,
-        rows,
-      });
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [projects, cellSize]);
-
-  return {
-    texture,
-    atlasMeta,
-  };
-}
-
-/* ================================================================
-   CLUSTER LAYOUT
-================================================================ */
-
-function useClusterLayout(
-  count,
-  targetRadius = 2.05
-) {
-  return useMemo(() => {
-    const radius =
-      new Float32Array(count);
-
-    const home =
-      new Float32Array(
-        count * 3
+      const dome = new THREE.Mesh(
+        geometry,
+        material,
       );
 
-    for (
-      let i = 0;
-      i < count;
-      i++
-    ) {
-      const random =
-        Math.random();
+      dome.userData.bubbleIndex = i;
 
-      if (random < 0.12) {
-        radius[i] =
-          0.20 +
-          Math.random() *
-            0.06;
-      } else if (
-        random < 0.85
+      group.add(dome);
+
+      domeMeshes.push(dome);
+
+      /*
+       * Glass highlights
+       */
+
+      const dotCount =
+        2 + Math.floor(Math.random() * 2);
+
+      for (
+        let dotIndex = 0;
+        dotIndex < dotCount;
+        dotIndex++
       ) {
-        radius[i] =
-          0.28 +
-          Math.random() *
-            0.12;
-      } else {
-        radius[i] =
-          0.43 +
-          Math.random() *
-            0.12;
+        const normalizedRadius =
+          dotIndex === 0
+            ? 0.32
+            : 0.5 + Math.random() * 0.25;
+
+        const theta =
+          dotIndex === 0
+            ? 2.35
+            : 2.1 +
+              (Math.random() - 0.5) *
+                0.9;
+
+        const [
+          highlightX,
+          highlightY,
+          highlightZ,
+        ] = domeSurfacePoint(
+          radius,
+          bulge,
+          normalizedRadius,
+          theta,
+        );
+
+        const dotSize =
+          (dotIndex === 0
+            ? 0.16
+            : 0.07) * radius;
+
+        const highlight =
+          createHighlightMesh(dotSize);
+
+        highlight.position.set(
+          highlightX,
+          highlightY,
+          highlightZ,
+        );
+
+        group.add(highlight);
       }
-    }
 
-    const goldenAngle =
-      Math.PI *
-      (3 - Math.sqrt(5));
-
-    for (
-      let i = 0;
-      i < count;
-      i++
-    ) {
-      const normalized =
-        i /
-        Math.max(
-          1,
-          count - 1
-        );
-
-      const y =
-        1 -
-        normalized * 2;
-
-      const ring =
-        Math.sqrt(
-          Math.max(
-            0,
-            1 - y * y
-          )
-        );
+      /*
+       * ------------------------------------------------
+       * INITIAL CLUSTER
+       *
+       * Important:
+       * Keep the initial cluster tight like the video.
+       * ------------------------------------------------
+       */
 
       const angle =
-        goldenAngle * i;
+  (Math.random() - 0.5) *
+  PHYSICS.spreadAngle;
 
-      const jitter =
-        0.78 +
-        Math.random() *
-          0.35;
+const distance =
+  Math.pow(Math.random(), 1.7) *
+  2.0;
 
-      home[i * 3] =
-        Math.cos(angle) *
-        ring *
-        targetRadius *
-        jitter;
+// sin -> full left/right width, cos -> upper 180° dome only
+const x =
+  Math.sin(angle) *
+  distance;
 
-      home[i * 3 + 1] =
-        y *
-          targetRadius *
-          jitter +
-        2.7;
+const y =
+  Math.cos(angle) *
+  distance *
+  0.78 -
+  0.6;
 
-      home[i * 3 + 2] =
-        Math.sin(angle) *
-        ring *
-        targetRadius *
-        0.42 *
-        jitter;
+      const z =
+        (Math.random() - 0.5) *
+        2.0;
+
+      group.position.set(
+        x,
+        y,
+        z,
+      );
+
+      /*
+       * Physics state
+       */
+
+      group.userData = {
+        material,
+
+        wanderX: x,
+        wanderY: y,
+        wanderZ: z,
+
+        wanderChangeAt: 0,
+
+        wanderDirX: 0,
+        wanderDirY: 0,
+        wanderDirZ: 0,
+
+        floatSpeed:
+          0.25 +
+          Math.random() * 0.35,
+
+        floatAmp:
+          0.25 +
+          Math.random() * 0.35,
+
+        phase:
+          Math.random() *
+          Math.PI *
+          2,
+
+        drift:
+          Math.random() *
+          Math.PI *
+          2,
+
+        texture,
+
+        radius,
+
+        vx: 0,
+        vy: 0,
+        vz: 0,
+
+        baseScale: 1,
+        targetScale: 1,
+
+        project,
+
+        index: i,
+
+        exploded: false,
+
+        explosionLife: 0,
+
+        /*
+         * Direction assigned when clicked.
+         */
+
+        explosionDirX: 0,
+        explosionDirY: 0,
+        explosionDirZ: 0,
+
+        explosionDistance: 0,
+      };
+
+      scene.add(group);
+
+      bubbles.push(group);
     }
 
     /*
-     * Resolve initial overlaps.
+     * --------------------------------------------------
+     * POINTER
+     * --------------------------------------------------
      */
 
-    for (
-      let iteration = 0;
-      iteration < 250;
-      iteration++
-    ) {
-      for (
-        let i = 0;
-        i < count;
-        i++
-      ) {
-        home[i * 3] *= 0.994;
+    mount.style.touchAction = "none";
 
-        home[i * 3 + 1] *=
-          0.994;
-
-        home[i * 3 + 2] *=
-          0.994;
-      }
-
-      for (
-        let i = 0;
-        i < count;
-        i++
-      ) {
-        for (
-          let j = i + 1;
-          j < count;
-          j++
-        ) {
-          const i3 =
-            i * 3;
-
-          const j3 =
-            j * 3;
-
-          const dx =
-            home[j3] -
-            home[i3];
-
-          const dy =
-            home[j3 + 1] -
-            home[i3 + 1];
-
-          const dz =
-            home[j3 + 2] -
-            home[i3 + 2];
-
-          const distance =
-            Math.sqrt(
-              dx * dx +
-                dy * dy +
-                dz * dz
-            ) || 0.0001;
-
-          const minimumDistance =
-            radius[i] +
-            radius[j] -
-            0.04;
-
-          if (
-            distance <
-            minimumDistance
-          ) {
-            const overlap =
-              (minimumDistance -
-                distance) /
-              2;
-
-            const nx =
-              dx / distance;
-
-            const ny =
-              dy / distance;
-
-            const nz =
-              dz / distance;
-
-            home[i3] -=
-              nx * overlap;
-
-            home[i3 + 1] -=
-              ny * overlap;
-
-            home[i3 + 2] -=
-              nz * overlap;
-
-            home[j3] +=
-              nx * overlap;
-
-            home[j3 + 1] +=
-              ny * overlap;
-
-            home[j3 + 2] +=
-              nz * overlap;
-          }
-        }
-      }
-    }
-
-    return {
-      home,
-      radius,
+    const mouse = {
+      x: 0,
+      y: 0,
     };
-  }, [
-    count,
-    targetRadius,
-  ]);
-}
 
-/* ================================================================
-   BUBBLE PARAMETERS
-================================================================ */
+    const ndc =
+      new THREE.Vector2(
+        9999,
+        9999,
+      );
 
-function useBubbleParameters(
-  count
-) {
-  return useMemo(() => {
-    return Array.from(
-      {
-        length: count,
-      },
-      () => ({
-        phaseX:
-          Math.random() *
-          Math.PI *
-          2,
+    const raycaster =
+      new THREE.Raycaster();
 
-        phaseY:
-          Math.random() *
-          Math.PI *
-          2,
+    /*
+     * Plane used for mouse physics.
+     */
 
-        phaseZ:
-          Math.random() *
-          Math.PI *
-          2,
+    const groundPlane =
+      new THREE.Plane(
+        new THREE.Vector3(0, 0, 1),
+        0,
+      );
 
-        speedX:
-          0.45 +
-          Math.random() *
-            0.35,
-
-        speedY:
-          0.4 +
-          Math.random() *
-            0.3,
-
-        speedZ:
-          0.35 +
-          Math.random() *
-            0.25,
-
-        rotation:
-          (Math.random() -
-            0.5) *
-          0.02,
-
-        depth:
-          0.88 +
-          Math.random() *
-            0.24,
-      })
-    );
-  }, [count]);
-}
-
-/* ================================================================
-   BUBBLE FIELD
-================================================================ */
-
-function BubbleField({
-  projects,
-  onSelect,
-  pointerActiveRef,
-  onLoadingChange,
-}) {
-  const count =
-    projects.length;
-
-  const meshRef =
-    useRef(null);
-
-  // Separate transparent shell gives every image sphere a real glossy
-  // "bubble" surface while keeping the project image fully visible.
-  const shellMeshRef =
-    useRef(null);
-
-  const {
-    home,
-    radius,
-  } = useClusterLayout(
-    count
-  );
-
-  const bubbleParams =
-    useBubbleParameters(
-      count
-    );
-
-  const {
-    texture,
-    atlasMeta,
-  } = useAtlasTexture(
-    projects
-  );
-
-  /* ============================================================
-     SELECTED
-  ============================================================ */
-
-  const selectedIndexRef =
-    useRef(null);
-
-  const selectedTimerRef =
-    useRef(null);
-
-  /* ============================================================
-     POSITION
-  ============================================================ */
-
-  const posX =
-    useRef(null);
-
-  const posY =
-    useRef(null);
-
-  const posZ =
-    useRef(null);
-
-  const velX =
-    useRef(null);
-
-  const velY =
-    useRef(null);
-
-  const velZ =
-    useRef(null);
-
-  const initialized =
-    useRef(false);
-
-  const entranceStart =
-    useRef(null);
-
-  /* ============================================================
-     MOUSE
-  ============================================================ */
-
-  const mouseWorld =
-    useRef(
+    const mouseWorld =
       new THREE.Vector3(
         9999,
         9999,
-        0
-      )
-    );
-
-  const mouseVelocity =
-    useRef(
-      new THREE.Vector2(
         0,
-        0
-      )
-    );
-
-  const previousMouse =
-    useRef(
-      new THREE.Vector2(
-        0,
-        0
-      )
-    );
-
-  const currentMouse =
-    useRef(
-      new THREE.Vector2(
-        0,
-        0
-      )
-    );
-
-  const mouseHasMoved =
-    useRef(false);
-
-  /* ============================================================
-     THREE HELPERS
-  ============================================================ */
-
-  const raycaster =
-    useMemo(
-      () =>
-        new THREE.Raycaster(),
-      []
-    );
-
-  const plane =
-    useMemo(
-      () =>
-        new THREE.Plane(
-          new THREE.Vector3(
-            0,
-            0,
-            1
-          ),
-          0
-        ),
-      []
-    );
-
-  const hitPoint =
-    useMemo(
-      () =>
-        new THREE.Vector3(),
-      []
-    );
-
-  const dummy =
-    useMemo(
-      () =>
-        new THREE.Object3D(),
-      []
-    );
-
-  /* ============================================================
-     POINTER CLICK
-  ============================================================ */
-
-  const pointerDownRef =
-    useRef(null);
-
-  /* ============================================================
-     LOADING
-  ============================================================ */
-
-  useEffect(() => {
-    onLoadingChange?.(
-      !texture ||
-        !atlasMeta
-    );
-  }, [
-    texture,
-    atlasMeta,
-    onLoadingChange,
-  ]);
-
-  /* ============================================================
-     INITIALIZE
-  ============================================================ */
-
-  useEffect(() => {
-    posX.current =
-      new Float32Array(
-        count
       );
 
-    posY.current =
-      new Float32Array(
-        count
-      );
+    const planeHit =
+      new THREE.Vector3();
 
-    posZ.current =
-      new Float32Array(
-        count
-      );
+    let pointerActive = false;
 
-    velX.current =
-      new Float32Array(
-        count
-      );
+    let pointerDown = null;
 
-    velY.current =
-      new Float32Array(
-        count
-      );
+    let selectedIndex = null;
 
-    velZ.current =
-      new Float32Array(
-        count
-      );
+    let navigateTimer = null;
 
-    for (
-      let i = 0;
-      i < count;
-      i++
-    ) {
-      const startOffset =
-        0.45 +
-        Math.random() *
-          0.55;
+    /*
+     * --------------------------------------------------
+     * POINTER HELPERS
+     * --------------------------------------------------
+     */
 
-      posX.current[i] =
-        home[i * 3] +
-        (Math.random() -
+    function updatePointer(event) {
+      const rect =
+        mount.getBoundingClientRect();
+
+      mouse.x =
+        ((event.clientX -
+          rect.left) /
+          rect.width -
           0.5) *
-          startOffset;
+        2;
 
-      posY.current[i] =
-        home[i * 3 + 1] +
-        (Math.random() -
+      mouse.y =
+        ((event.clientY -
+          rect.top) /
+          rect.height -
           0.5) *
-          startOffset;
+        2;
 
-      posZ.current[i] =
-        home[i * 3 + 2] +
-        (Math.random() -
-          0.5) *
-          startOffset;
+      ndc.x =
+        ((event.clientX -
+          rect.left) /
+          rect.width) *
+          2 -
+        1;
 
-      velX.current[i] =
-        0;
-
-      velY.current[i] =
-        0;
-
-      velZ.current[i] =
-        0;
+      ndc.y =
+        -(
+          ((event.clientY -
+            rect.top) /
+            rect.height) *
+            2 -
+          1
+        );
     }
 
-    selectedIndexRef.current =
-      null;
+    function pointerMove(event) {
+      updatePointer(event);
 
-    entranceStart.current =
-      null;
+      pointerActive = true;
+    }
 
-    initialized.current =
-      true;
-  }, [
-    count,
-    home,
-  ]);
+    function pointerEnter(event) {
+      updatePointer(event);
 
-  /* ============================================================
-     GEOMETRY
-  ============================================================ */
+      pointerActive = true;
+    }
 
-  const geometry =
-    useMemo(() => {
-      /*
-       * High segment count gives each project a genuinely round
-       * 3D bubble instead of a flat circular image.
-       */
-      const geo =
-        new THREE.SphereGeometry(
-          1,
-          64,
-          64
-        );
+    function pointerLeave() {
+      pointerActive = false;
 
-      if (!atlasMeta) {
-        return geo;
-      }
+      mouseWorld.set(
+        9999,
+        9999,
+        0,
+      );
+    }
 
-      const {
-        cols,
-        rows,
-      } = atlasMeta;
+    /*
+     * --------------------------------------------------
+     * POINTER DOWN
+     * --------------------------------------------------
+     */
 
-      const offset =
-        new Float32Array(
-          count * 2
-        );
+    function pointerDownHandler(event) {
+      updatePointer(event);
 
-      const uvScale =
-        new Float32Array(
-          count * 2
-        );
+      pointerActive = true;
 
-      for (
-        let i = 0;
-        i < count;
-        i++
-      ) {
-        const col =
-          i % cols;
-
-        const row =
-          Math.floor(
-            i / cols
-          );
-
-        offset[i * 2] =
-          col / cols;
-
-        /*
-         * Canvas atlas has its origin at top-left.
-         */
-
-        offset[i * 2 + 1] =
-          1 -
-          (row + 1) /
-            rows;
-
-        uvScale[i * 2] =
-          1 / cols;
-
-        uvScale[i * 2 + 1] =
-          1 / rows;
-      }
-
-      geo.setAttribute(
-        "aUvOffset",
-        new THREE.InstancedBufferAttribute(
-          offset,
-          2
-        )
+      raycaster.setFromCamera(
+        ndc,
+        camera,
       );
 
-      geo.setAttribute(
-        "aUvScale",
-        new THREE.InstancedBufferAttribute(
-          uvScale,
-          2
-        )
-      );
-
-      return geo;
-    }, [
-      atlasMeta,
-      count,
-    ]);
-
-  /* ============================================================
-     MATERIAL
-  ============================================================ */
-
-  const material =
-    useMemo(() => {
-      if (!texture) {
-        return null;
-      }
-
-      const mat =
-        new THREE.MeshPhysicalMaterial(
-          {
-            map: texture,
-
-            /*
-             * Physical material settings.
-             *
-             * The important part here is that the texture is still
-             * opaque, while the surface itself gets glass-like
-             * reflections and highlights.
-             */
-
-            roughness: 0.16,
-
-            metalness: 0,
-
-            clearcoat: 1,
-
-            clearcoatRoughness: 0.055,
-
-            envMapIntensity: 2.7,
-
-            sheen: 0.12,
-
-            sheenRoughness: 0.2,
-
-            ior: 1.33,
-
-            transmission: 0.04,
-
-            thickness: 0.18,
-
-            transparent: false,
-
-            side: THREE.FrontSide,
-          }
+      const hits =
+        raycaster.intersectObjects(
+          domeMeshes,
+          false,
         );
 
-      mat.onBeforeCompile =
-        (shader) => {
-          /*
-           * ======================================================
-           * VERTEX SHADER
-           * ======================================================
-           *
-           * The original implementation calculated atlas UVs
-           * from normal.xy. That makes the image appear like a
-           * flat projection.
-           *
-           * Here we use the actual SphereGeometry UV coordinates.
-           * This means the project image is wrapped around the
-           * sphere.
-           */
+      pointerDown = {
+        x: event.clientX,
+        y: event.clientY,
 
-          shader.vertexShader =
-            shader.vertexShader
-              .replace(
-                "#include <common>",
-                `
-#include <common>
+        index:
+          hits.length > 0
+            ? hits[0].object.userData
+                .bubbleIndex
+            : null,
+      };
+    }
 
-attribute vec2 aUvOffset;
-attribute vec2 aUvScale;
+    /*
+     * --------------------------------------------------
+     * EXPLOSION
+     *
+     * This is the important part.
+     *
+     * Every other bubble gets a radial direction
+     * away from the selected bubble.
+     * --------------------------------------------------
+     */
 
-varying vec2 vBubbleUv;
-`
-              )
-              .replace(
-                "#include <uv_vertex>",
-                `
-#include <uv_vertex>
-
-vBubbleUv =
-  uv *
-  aUvScale +
-  aUvOffset;
-`
-              );
-
-          /*
-           * ======================================================
-           * FRAGMENT SHADER
-           * ======================================================
-           */
-
-          shader.fragmentShader =
-            shader.fragmentShader
-              .replace(
-                "#include <common>",
-                `
-#include <common>
-
-varying vec2 vBubbleUv;
-`
-              );
-
-          /*
-           * Replace the standard map sampling with atlas
-           * sampling.
-           */
-
-          shader.fragmentShader =
-            shader.fragmentShader
-              .replace(
-                "#include <map_fragment>",
-                `
-#ifdef USE_MAP
-
-vec4 bubbleTexture =
-  texture2D(
-    map,
-    vBubbleUv
-  );
-
-diffuseColor *=
-  bubbleTexture;
-
-#endif
-`
-              );
-
-          /*
-           * Add the bubble lighting after the normal has been
-           * calculated.
-           */
-
-          shader.fragmentShader =
-            shader.fragmentShader.replace(
-              "#include <dithering_fragment>",
-              `
-
-/* ============================================================
-   BUBBLE NORMAL
-============================================================ */
-
-vec3 bubbleNormal =
-  normalize(normal);
-
-/* ============================================================
-   VIEW DIRECTION
-============================================================ */
-
-vec3 bubbleViewDir =
-  normalize(vViewPosition);
-
-/* ============================================================
-   FRESNEL
-============================================================ */
-
-float bubbleFacing =
-  clamp(
-    dot(
-      bubbleNormal,
-      bubbleViewDir
-    ),
-    0.0,
-    1.0
-  );
-
-float fresnel =
-  pow(
-    1.0 -
-      bubbleFacing,
-    3.6
-  );
-
-/* ============================================================
-   DARK EDGE / OUTLINE
-============================================================
-
-   This is the subtle outline around every sphere.
-
-   It becomes strongest near the silhouette, but is deliberately
-   soft so the bubbles do not look like cartoon circles.
-*/
-
-float outline =
-  smoothstep(
-    0.46,
-    0.92,
-    fresnel
-  );
-
-vec3 outlineColor =
-  vec3(
-    0.025,
-    0.022,
-    0.035
-  );
-
-gl_FragColor.rgb =
-  mix(
-    gl_FragColor.rgb,
-    outlineColor,
-    outline * 0.38
-  );
-
-/* ============================================================
-   WHITE GLASS RIM
-============================================================ */
-
-float rim =
-  smoothstep(
-    0.54,
-    0.96,
-    fresnel
-  );
-
-vec3 rimColor =
-  vec3(
-    1.0,
-    1.0,
-    1.0
-  );
-
-gl_FragColor.rgb =
-  mix(
-    gl_FragColor.rgb,
-    rimColor,
-    rim * 0.20
-  );
-
-/* ============================================================
-   TOP-LEFT SPECULAR HOTSPOT
-============================================================ */
-
-vec3 highlightDirection =
-  normalize(
-    vec3(
-      -0.45,
-      0.62,
-      1.0
-    )
-  );
-
-vec3 halfDirection =
-  normalize(
-    highlightDirection +
-      bubbleViewDir
-  );
-
-float specular =
-  pow(
-    max(
-      dot(
-        bubbleNormal,
-        halfDirection
-      ),
-      0.0
-    ),
-    72.0
-  );
-
-gl_FragColor.rgb +=
-  vec3(
-    1.0
-  ) *
-  specular *
-  0.82;
-
-/* ============================================================
-   SECONDARY SOFT HIGHLIGHT
-============================================================ */
-
-float softHighlight =
-  pow(
-    max(
-      dot(
-        bubbleNormal,
-        highlightDirection
-      ),
-      0.0
-    ),
-    3.2
-  );
-
-gl_FragColor.rgb +=
-  vec3(
-    0.10,
-    0.095,
-    0.12
-  ) *
-  softHighlight;
-
-/* ============================================================
-   SPHERICAL EDGE DARKENING
-============================================================
-
-   Adds a little extra curvature to the project image itself.
-*/
-
-float sphericalShade =
-  smoothstep(
-    0.0,
-    0.92,
-    fresnel
-  );
-
-gl_FragColor.rgb *=
-  1.0 -
-  sphericalShade *
-    0.18;
-
-/* ============================================================
-   BOTTOM AMBIENT SHADOW
-============================================================ */
-
-float bottomShade =
-  smoothstep(
-    -0.15,
-    -0.85,
-    bubbleNormal.y
-  );
-
-gl_FragColor.rgb *=
-  1.0 -
-  bottomShade *
-    0.10;
-
-/* ============================================================
-   SMALL INNER GLOW
-============================================================ */
-
-float innerGlow =
-  pow(
-    max(
-      dot(
-        bubbleNormal,
-        highlightDirection
-      ),
-      0.0
-    ),
-    7.0
-  );
-
-gl_FragColor.rgb +=
-  vec3(
-    0.035,
-    0.032,
-    0.045
-  ) *
-  innerGlow;
-
-#include <dithering_fragment>
-`
-            );
-        };
-
-      return mat;
-    }, [texture]);
-
-  /*
-   * Transparent outer shell.
-   *
-   * The project image remains on the inner sphere. This second,
-   * slightly larger physical sphere supplies the glossy transparent
-   * bubble coating without changing the click/navigation behavior.
-   */
-  const bubbleShellMaterial =
-    useMemo(() => {
-      const mat =
-        new THREE.MeshPhysicalMaterial({
-          color: 0xffffff,
-          roughness: 0.035,
-          metalness: 0,
-          clearcoat: 1,
-          clearcoatRoughness: 0.025,
-          envMapIntensity: 3.2,
-          transmission: 0.12,
-          thickness: 0.08,
-          ior: 1.33,
-          transparent: true,
-          opacity: 0.13,
-          depthWrite: false,
-          side: THREE.FrontSide,
-        });
-
-      return mat;
-    }, []);
-
-  /* ============================================================
-     SELECT PROJECT
-  ============================================================ */
-
-  const triggerExplosion =
-    (selectedIndex) => {
+    function explodeBubble(selected) {
       if (
-        selectedIndexRef.current !==
-        null
+        selectedIndex !== null
       ) {
         return;
       }
 
-      if (
-        !posX.current ||
-        !posY.current ||
-        !posZ.current ||
-        !velX.current ||
-        !velY.current ||
-        !velZ.current
-      ) {
-        return;
-      }
+      selectedIndex = selected;
 
-      selectedIndexRef.current =
-        selectedIndex;
+      const selectedBubble =
+        bubbles[selected];
 
-      const pX =
-        posX.current;
-
-      const pY =
-        posY.current;
-
-      const pZ =
-        posZ.current;
-
-      const vX =
-        velX.current;
-
-      const vY =
-        velY.current;
-
-      const vZ =
-        velZ.current;
-
-      const selectedX =
-        pX[selectedIndex];
-
-      const selectedY =
-        pY[selectedIndex];
-
-      const selectedZ =
-        pZ[selectedIndex];
+      const selectedPosition =
+        selectedBubble.position.clone();
 
       /*
-       * Push all other bubbles away from selected bubble.
+       * Selected bubble:
+       *
+       * - becomes bigger
+       * - moves to center
+       * - moves slightly toward camera
+       */
+
+      selectedBubble.userData.targetScale =
+        PHYSICS.selectedScale;
+
+      selectedBubble.userData.vx +=
+        -selectedBubble.position.x *
+        PHYSICS.selectedCenterStrength;
+
+      selectedBubble.userData.vy +=
+        -selectedBubble.position.y *
+        PHYSICS.selectedCenterStrength;
+
+      selectedBubble.userData.vz +=
+        PHYSICS.selectedForward;
+
+      /*
+       * Push every other bubble away.
        */
 
       for (
         let i = 0;
-        i < count;
+        i < bubbles.length;
         i++
       ) {
-        if (
-          i === selectedIndex
-        ) {
+        if (i === selected) {
           continue;
         }
 
-        const dx =
-          pX[i] -
-          selectedX;
+        const bubble = bubbles[i];
 
-        const dy =
-          pY[i] -
-          selectedY;
+        const data =
+          bubble.userData;
 
-        const dz =
-          pZ[i] -
-          selectedZ;
+        const direction =
+          bubble.position
+            .clone()
+            .sub(selectedPosition);
 
-        const distance =
-          Math.sqrt(
-            dx * dx +
-              dy * dy +
-              dz * dz
-          ) || 0.001;
+        let distance =
+          direction.length();
 
-        const normalized =
+        /*
+         * Prevent zero-length direction.
+         */
+
+        if (distance < 0.001) {
+          direction.set(
+            Math.random() - 0.5,
+            Math.random() - 0.5,
+            Math.random() - 0.5,
+          );
+
+          distance =
+            direction.length();
+        }
+
+        direction.normalize();
+
+        /*
+         * Close bubbles receive much
+         * stronger force.
+         */
+
+        const proximity =
           THREE.MathUtils.clamp(
             1 -
               distance /
-                PHYSICS.selectedPushRadius,
+                PHYSICS.explosionRadius,
             0,
-            1
+            1,
           );
 
+        /*
+         * Strong near center,
+         * softer farther away.
+         */
+
         const falloff =
-          normalized *
-          normalized;
+          0.35 +
+          proximity *
+            proximity *
+            2.2;
 
-        const nx =
-          dx / distance;
-
-        const ny =
-          dy / distance;
-
-        const nz =
-          dz / distance;
-
-        const force =
-          PHYSICS.selectedPushStrength *
+        const strength =
+          PHYSICS.explosionStrength *
           falloff;
 
-        vX[i] +=
-          nx *
-          force *
-          0.85;
+        /*
+         * Store the direction so the
+         * explosion continues visually.
+         */
 
-        vY[i] +=
-          ny *
-          force *
-          0.85;
+        data.explosionDirX =
+          direction.x;
 
-        vZ[i] +=
-          nz *
-          force *
-          0.2;
+        data.explosionDirY =
+          direction.y;
+
+        data.explosionDirZ =
+          direction.z;
+
+        data.explosionDistance =
+          distance;
+
+        data.exploded = true;
+
+        data.explosionLife = 0;
+
+        /*
+         * Initial velocity.
+         */
+
+        data.vx +=
+          direction.x *
+          PHYSICS.explosionOutwardVelocity *
+          falloff;
+
+        data.vy +=
+          direction.y *
+          PHYSICS.explosionOutwardVelocity *
+          falloff;
+
+        data.vz +=
+          direction.z *
+          PHYSICS.explosionOutwardVelocity *
+          falloff;
+
+        /*
+         * Small random variation makes the
+         * explosion organic instead of perfect.
+         */
+
+        data.vx +=
+          (Math.random() - 0.5) *
+          0.7;
+
+        data.vy +=
+          (Math.random() - 0.5) *
+          0.7;
+
+        data.vz +=
+          (Math.random() - 0.5) *
+          0.4;
+
+        /*
+         * Extra immediate push.
+         */
+
+        data.vx +=
+          direction.x *
+          strength *
+          0.18;
+
+        data.vy +=
+          direction.y *
+          strength *
+          0.18;
+
+        data.vz +=
+          direction.z *
+          strength *
+          0.18;
       }
 
       /*
-       * Pull selected bubble toward center.
+       * Navigate after the animation.
        */
 
-      vX[selectedIndex] +=
-        -selectedX *
-        PHYSICS.selectedCenterStrength *
-        0.12;
-
-      vY[selectedIndex] +=
-        -selectedY *
-        PHYSICS.selectedCenterStrength *
-        0.12;
-
-      vZ[selectedIndex] +=
-        (0.15 -
-          selectedZ) *
-        PHYSICS.selectedCenterStrength *
-        0.08;
-
-      vZ[selectedIndex] +=
-        0.7;
-
-      /*
-       * Navigate after the bubble has moved.
-       */
-
-      if (
-        selectedTimerRef.current
-      ) {
+      if (navigateTimer) {
         clearTimeout(
-          selectedTimerRef.current
+          navigateTimer,
         );
       }
 
-      selectedTimerRef.current =
+      navigateTimer =
         setTimeout(() => {
           const project =
-            projects[
-              selectedIndex
-            ];
+            selectedBubble.userData
+              .project;
 
-          if (project) {
-            onSelect?.(
-              project
+          if (
+            project &&
+            project.slug
+          ) {
+            router.push(
+              `/projects/${project.slug}`,
             );
           }
-        }, 650);
-    };
+        }, PHYSICS.navigateDelay);
+    }
 
-  /* ============================================================
-     FRAME LOOP
-  ============================================================ */
+    /*
+     * --------------------------------------------------
+     * POINTER UP
+     * --------------------------------------------------
+     */
 
-  useFrame(
-    (
-      state,
-      rawDelta
-    ) => {
+    function pointerUpHandler(event) {
+      const down =
+        pointerDown;
+
+      pointerDown = null;
+
       if (
-        !meshRef.current ||
-        !initialized.current ||
-        !posX.current ||
-        !posY.current ||
-        !posZ.current ||
-        !velX.current ||
-        !velY.current ||
-        !velZ.current
+        !down ||
+        down.index === null
       ) {
         return;
       }
 
-      const time =
-        state.clock.elapsedTime;
+      const deltaX =
+        event.clientX -
+        down.x;
 
-      const dt =
-        Math.min(
-          rawDelta,
-          PHYSICS.maxDeltaTime
+      const deltaY =
+        event.clientY -
+        down.y;
+
+      const distance =
+        Math.sqrt(
+          deltaX * deltaX +
+            deltaY * deltaY,
         );
 
-      if (
-        entranceStart.current ===
-        null
-      ) {
-        entranceStart.current =
-          time;
+      /*
+       * Small movement = click/tap.
+       */
+
+      if (distance < 14) {
+        explodeBubble(
+          down.index,
+        );
       }
+    }
 
-      const entranceElapsed =
-        time -
-        entranceStart.current;
+    mount.addEventListener(
+      "pointermove",
+      pointerMove,
+    );
 
-      /* ========================================================
-         MOUSE WORLD POSITION
-      ======================================================== */
+    mount.addEventListener(
+      "pointerenter",
+      pointerEnter,
+    );
 
-      if (
-        pointerActiveRef.current
-      ) {
+    mount.addEventListener(
+      "pointerleave",
+      pointerLeave,
+    );
+
+    mount.addEventListener(
+      "pointerdown",
+      pointerDownHandler,
+    );
+
+    window.addEventListener(
+      "pointerup",
+      pointerUpHandler,
+    );
+
+    window.addEventListener(
+      "pointercancel",
+      pointerUpHandler,
+    );
+
+    /*
+     * --------------------------------------------------
+     * ANIMATION
+     * --------------------------------------------------
+     */
+
+    const clock =
+      new THREE.Clock();
+
+    let frameId = 0;
+
+    function animate() {
+      frameId =
+        requestAnimationFrame(
+          animate,
+        );
+
+      const deltaTime =
+        Math.min(
+          clock.getDelta(),
+          PHYSICS.maxDeltaTime,
+        );
+
+      const elapsed =
+        clock.elapsedTime;
+
+      /*
+       * Update mouse world position.
+       */
+
+      if (pointerActive) {
         raycaster.setFromCamera(
-          state.pointer,
-          state.camera
+          ndc,
+          camera,
         );
 
         const hit =
           raycaster.ray.intersectPlane(
-            plane,
-            hitPoint
+            groundPlane,
+            planeHit,
           );
 
         if (hit) {
-          mouseWorld.current.copy(
-            hitPoint
+          mouseWorld.copy(
+            planeHit,
           );
         }
       }
 
-      /* ========================================================
-         MOUSE VELOCITY
-      ======================================================== */
-
-      if (
-        pointerActiveRef.current &&
-        mouseHasMoved.current
-      ) {
-        const dx =
-          currentMouse.current.x -
-          previousMouse.current.x;
-
-        const dy =
-          currentMouse.current.y -
-          previousMouse.current.y;
-
-        mouseVelocity.current.x =
-          mouseVelocity.current.x *
-            0.35 +
-          dx * 0.65;
-
-        mouseVelocity.current.y =
-          mouseVelocity.current.y *
-            0.35 +
-          dy * 0.65;
-      } else {
-        mouseVelocity.current.x *=
-          0.82;
-
-        mouseVelocity.current.y *=
-          0.82;
-      }
-
-      previousMouse.current.copy(
-        currentMouse.current
-      );
-
-      const pX =
-        posX.current;
-
-      const pY =
-        posY.current;
-
-      const pZ =
-        posZ.current;
-
-      const vX =
-        velX.current;
-
-      const vY =
-        velY.current;
-
-      const vZ =
-        velZ.current;
-
-      const mouseX =
-        mouseWorld.current.x;
-
-      const mouseY =
-        mouseWorld.current.y;
-
-      const mouseZ =
-        mouseWorld.current.z;
-
-      const selectedIndex =
-        selectedIndexRef.current;
-
-      /* ========================================================
-         EACH BUBBLE
-      ======================================================== */
+      /*
+       * ------------------------------------------------
+       * BUBBLE FORCES
+       * ------------------------------------------------
+       */
 
       for (
         let i = 0;
-        i < count;
+        i < bubbles.length;
         i++
       ) {
-        const i3 =
-          i * 3;
+        const bubble =
+          bubbles[i];
 
-        const params =
-          bubbleParams[i];
+        const data =
+          bubble.userData;
 
-        /* ======================================================
-           IDLE FLOAT
-        ====================================================== */
+        const {
+          radius,
+          floatSpeed,
+          floatAmp,
+          phase,
+          drift,
+          texture,
+          material,
+        } = data;
 
-        const idleX =
-          Math.sin(
-            time *
-              params.speedX *
-              PHYSICS.idleSpeed +
-              params.phaseX
-          ) *
-          PHYSICS.idleMovementStrength;
-
-        const idleY =
-          Math.cos(
-            time *
-              params.speedY *
-              PHYSICS.idleSpeed +
-              params.phaseY
-          ) *
-          PHYSICS.idleMovementStrength;
-
-        const idleZ =
-          Math.sin(
-            time *
-              params.speedZ *
-              PHYSICS.idleSpeed +
-              params.phaseZ
-          ) *
-          PHYSICS.idleMovementStrength *
-          0.65;
-
-        let targetX =
-          home[i3] +
-          idleX;
-
-        let targetY =
-          home[i3 + 1] +
-          idleY;
-
-        let targetZ =
-          home[i3 + 2] +
-          idleZ;
-
-        /* ======================================================
-           SELECTED ANIMATION
-        ====================================================== */
+        /*
+         * Shader animation.
+         */
 
         if (
-          selectedIndex !==
-            null &&
-          selectedIndex !==
-            undefined
+          material?.userData
+            ?.shader
         ) {
-          if (
-            i ===
-            selectedIndex
-          ) {
-            targetX = 0;
-            targetY = 0;
-            targetZ = 0.15;
-
-            const centerForce =
-              PHYSICS.selectedCenterStrength;
-
-            vX[i] +=
-              (targetX -
-                pX[i]) *
-              centerForce *
-              dt;
-
-            vY[i] +=
-              (targetY -
-                pY[i]) *
-              centerForce *
-              dt;
-
-            vZ[i] +=
-              (targetZ -
-                pZ[i]) *
-              centerForce *
-              dt;
-          } else {
-            const dx =
-              pX[i] -
-              pX[selectedIndex];
-
-            const dy =
-              pY[i] -
-              pY[selectedIndex];
-
-            const dz =
-              pZ[i] -
-              pZ[selectedIndex];
-
-            const distance =
-              Math.sqrt(
-                dx * dx +
-                  dy * dy +
-                  dz * dz
-              ) || 0.001;
-
-            const nx =
-              dx / distance;
-
-            const ny =
-              dy / distance;
-
-            const nz =
-              dz / distance;
-
-            const pushAmount =
-              THREE.MathUtils.clamp(
-                1 -
-                  distance /
-                    PHYSICS.escapeFalloffDistance,
-                0,
-                1
-              );
-
-            vX[i] +=
-              nx *
-              PHYSICS.escapeStrength *
-              pushAmount *
-              dt;
-
-            vY[i] +=
-              ny *
-              PHYSICS.escapeStrength *
-              pushAmount *
-              dt;
-
-            vZ[i] +=
-              nz *
-              PHYSICS.escapeStrength *
-              0.4 *
-              pushAmount *
-              dt;
-
-            targetX =
-              home[i3] +
-              nx *
-                PHYSICS.escapeTravelDistance;
-
-            targetY =
-              home[i3 + 1] +
-              ny *
-                PHYSICS.escapeTravelDistance;
-
-            targetZ =
-              home[i3 + 2] +
-              nz *
-                (PHYSICS.escapeTravelDistance *
-                  0.32);
-          }
+          material.userData
+            .shader.uniforms
+            .uTime.value =
+            elapsed;
         }
 
-        /* ======================================================
-           SPRING
-        ====================================================== */
+        /*
+         * Texture movement.
+         */
+
+        texture.offset.set(
+          Math.sin(
+            elapsed * 0.15 +
+              drift,
+          ) * 0.01,
+
+          Math.cos(
+            elapsed * 0.12 +
+              drift,
+          ) * 0.01,
+        );
+
+        /*
+         * ------------------------------------------------
+         * SELECTED BUBBLE
+         * ------------------------------------------------
+         */
+
+        if (
+          selectedIndex === i
+        ) {
+          /*
+           * Smoothly pull selected bubble
+           * toward exact center.
+           */
+
+          data.vx +=
+            -bubble.position.x *
+            PHYSICS.selectedAttraction *
+            deltaTime;
+
+          data.vy +=
+            -bubble.position.y *
+            PHYSICS.selectedAttraction *
+            deltaTime;
+
+          /*
+           * Bring it toward camera.
+           */
+
+          data.vz +=
+            (PHYSICS.selectedForward -
+              bubble.position.z) *
+            5 *
+            deltaTime;
+
+          data.targetScale =
+            PHYSICS.selectedScale;
+
+          continue;
+        }
+
+        /*
+         * ------------------------------------------------
+         * EXPLODING BUBBLES
+         * ------------------------------------------------
+         */
+
+        if (data.exploded) {
+          data.explosionLife +=
+            deltaTime;
+
+          /*
+           * Continue pushing outward.
+           *
+           * This makes the movement match the
+           * video much better than a single impulse.
+           */
+
+          const time =
+            data.explosionLife;
+
+          /*
+           * Strong initial push,
+           * quickly decreasing.
+           */
+
+          const pushFade =
+            Math.exp(
+              -time * 1.15,
+            );
+
+          const distanceFade =
+            THREE.MathUtils.clamp(
+              1 -
+                data.explosionDistance /
+                  7,
+              0.2,
+              1,
+            );
+
+          const push =
+            PHYSICS.explosionStrength *
+            pushFade *
+            distanceFade;
+
+          data.vx +=
+            data.explosionDirX *
+            push *
+            deltaTime;
+
+          data.vy +=
+            data.explosionDirY *
+            push *
+            deltaTime;
+
+          data.vz +=
+            data.explosionDirZ *
+            push *
+            deltaTime;
+
+          /*
+           * Explosion damping.
+           */
+
+          const explosionDamping =
+            Math.pow(
+              PHYSICS.explosionDamping,
+              deltaTime * 60,
+            );
+
+          data.vx *=
+            explosionDamping;
+
+          data.vy *=
+            explosionDamping;
+
+          data.vz *=
+            explosionDamping;
+
+          /*
+           * Smaller during explosion.
+           */
+
+          data.targetScale =
+            0.92;
+
+          /*
+           * Slight rotation.
+           */
+
+          bubble.rotation.z +=
+            0.12 *
+            deltaTime;
+
+          /*
+           * Don't let normal wandering
+           * pull these bubbles back into
+           * the cluster.
+           */
+
+          continue;
+        }
+
+        /*
+         * ------------------------------------------------
+         * NORMAL WANDER
+         * ------------------------------------------------
+         */
+
+        if (
+          elapsed >=
+          data.wanderChangeAt
+        ) {
+          const angle =
+  (Math.random() - 0.5) *
+  PHYSICS.spreadAngle;
+
+const zAngle =
+  (Math.random() -
+    0.5) *
+  Math.PI;
+
+data.wanderDirX =
+  Math.sin(angle) *
+  Math.cos(zAngle);
+
+data.wanderDirY =
+  Math.cos(angle) *
+  Math.cos(zAngle) -
+  0.15;
+
+          data.wanderDirZ =
+            Math.sin(zAngle);
+
+          const [
+            minimumTime,
+            maximumTime,
+          ] =
+            PHYSICS.wanderChangeInterval;
+
+          data.wanderChangeAt =
+            elapsed +
+            minimumTime +
+            Math.random() *
+              (maximumTime -
+                minimumTime);
+        }
+
+        data.wanderX +=
+          data.wanderDirX *
+          PHYSICS.wanderStep *
+          deltaTime;
+
+        data.wanderY +=
+          data.wanderDirY *
+          PHYSICS.wanderStep *
+          deltaTime;
+
+        data.wanderZ +=
+          data.wanderDirZ *
+          PHYSICS.wanderStep *
+          deltaTime;
+
+        /*
+         * Floating target.
+         */
+
+        const targetX =
+          data.wanderX +
+          Math.cos(
+            elapsed *
+              floatSpeed *
+              0.6 +
+              phase,
+          ) *
+            0.18;
+
+        const targetY =
+          data.wanderY +
+          Math.sin(
+            elapsed *
+              floatSpeed +
+              phase,
+          ) *
+            floatAmp *
+            0.55;
+
+        const targetZ =
+          data.wanderZ;
 
         let forceX =
           (targetX -
-            pX[i]) *
+            bubble.position.x) *
           PHYSICS.springStrength;
 
         let forceY =
           (targetY -
-            pY[i]) *
+            bubble.position.y) *
           PHYSICS.springStrength;
 
         let forceZ =
           (targetZ -
-            pZ[i]) *
+            bubble.position.z) *
           PHYSICS.springStrength;
 
-        /* ======================================================
-           MOUSE INTERACTION
-        ====================================================== */
+        /*
+         * ------------------------------------------------
+         * CLUSTER COHESION
+         * ------------------------------------------------
+         */
+
+        const distanceFromCenter =
+          Math.sqrt(
+            bubble.position.x *
+              bubble.position.x +
+              bubble.position.y *
+                bubble.position.y +
+              bubble.position.z *
+                bubble.position.z,
+          );
 
         if (
-          pointerActiveRef.current &&
-          selectedIndex === null
+          distanceFromCenter >
+          PHYSICS.cohesionRadius
         ) {
+          const pull =
+            (distanceFromCenter -
+              PHYSICS.cohesionRadius) *
+            PHYSICS.cohesionStrength;
+
+          forceX +=
+            (-bubble.position.x /
+              distanceFromCenter) *
+            pull;
+
+          forceY +=
+            (-bubble.position.y /
+              distanceFromCenter) *
+            pull;
+
+          forceZ +=
+            (-bubble.position.z /
+              distanceFromCenter) *
+            pull;
+        }
+
+        /*
+         * ------------------------------------------------
+         * MOUSE REPULSION
+         * ------------------------------------------------
+         */
+
+        if (pointerActive) {
           const dx =
-            pX[i] -
-            mouseX;
+            bubble.position.x -
+            mouseWorld.x;
 
           const dy =
-            pY[i] -
-            mouseY;
-
-          const dz =
-            pZ[i] -
-            mouseZ;
+            bubble.position.y -
+            mouseWorld.y;
 
           const distance =
             Math.sqrt(
               dx * dx +
-                dy * dy +
-                dz * dz
-            ) || 0.0001;
+                dy * dy,
+            );
 
           if (
             distance <
-            PHYSICS.interactionRadius
+            PHYSICS.hoverRadius
           ) {
-            const normalizedDistance =
-              1 -
-              distance /
-                PHYSICS.interactionRadius;
+            const normalized =
+              THREE.MathUtils.clamp(
+                1 -
+                  distance /
+                    PHYSICS.hoverRadius,
+                0,
+                1,
+              );
+
+            /*
+             * Hover glow.
+             */
+
+            if (
+              material.userData
+                .shader
+            ) {
+              material.userData
+                .shader.uniforms
+                .uHover.value =
+                THREE.MathUtils.lerp(
+                  material.userData
+                    .shader.uniforms
+                    .uHover.value,
+                  normalized,
+                  0.15,
+                );
+            }
 
             const falloff =
-              normalizedDistance *
-              normalizedDistance;
+              normalized *
+              normalized;
 
-            const mouseSpeed =
-              Math.sqrt(
-                mouseVelocity.current.x *
-                  mouseVelocity.current.x +
-                  mouseVelocity.current.y *
-                    mouseVelocity.current.y
+           const strength =
+  (PHYSICS.hoverForce *
+    falloff) /
+  Math.sqrt(
+    Math.max(radius, 0.3),
               );
 
-            const velocityInfluence =
-              1 +
-              mouseSpeed *
-                PHYSICS.mouseVelocityMultiplier;
-
-            const fastBoost =
-              Math.min(
-                velocityInfluence,
-                PHYSICS.fastMovementBoost
-              );
-
-            const strength =
-              (PHYSICS.interactionForce *
-                falloff *
-                fastBoost) /
+            let dirX =
+              dx /
               Math.max(
-                radius[i],
-                0.1
+                distance,
+                0.001,
               );
+
+            let dirY =
+              dy /
+              Math.max(
+                distance,
+                0.001,
+              );
+
+            if (
+              distance <
+              0.05
+            ) {
+              dirX =
+                Math.random() -
+                0.5;
+
+              dirY =
+                Math.random() -
+                0.5;
+
+              const length =
+                Math.sqrt(
+                  dirX * dirX +
+                    dirY * dirY,
+                ) || 1;
+
+              dirX /= length;
+              dirY /= length;
+            }
 
             forceX +=
-              (dx / distance) *
-              strength;
+              dirX * strength;
 
             forceY +=
-              (dy / distance) *
-              strength;
-
-            forceZ +=
-              (dz / distance) *
-              strength *
-              0.35;
+              dirY * strength;
           }
         }
 
-        /* ======================================================
-           APPLY FORCE
-        ====================================================== */
+        /*
+         * Apply forces.
+         */
 
-        vX[i] +=
-          forceX * dt;
+        data.vx +=
+          forceX *
+          deltaTime;
 
-        vY[i] +=
-          forceY * dt;
+        data.vy +=
+          forceY *
+          deltaTime;
 
-        vZ[i] +=
-          forceZ * dt;
+        data.vz +=
+          forceZ *
+          deltaTime;
+
+        data.targetScale = 1;
       }
 
-      /* ========================================================
-         COLLISIONS
-      ======================================================== */
+      /*
+       * --------------------------------------------------
+       * VELOCITY / POSITION
+       * --------------------------------------------------
+       */
+
+      const damping =
+        Math.pow(
+          PHYSICS.damping,
+          deltaTime * 60,
+        );
+
+      for (
+        let i = 0;
+        i < bubbles.length;
+        i++
+      ) {
+        const bubble =
+          bubbles[i];
+
+        const data =
+          bubble.userData;
+
+        /*
+         * Don't damp the selected bubble
+         * too aggressively. Exploded bubbles get
+         * a much lighter damping so they keep
+         * flying off screen instead of settling
+         * back down near the cluster.
+         */
+
+        if (selectedIndex !== i) {
+          if (data.exploded) {
+            const explosionVelocityDamping =
+              Math.pow(
+                PHYSICS.explosionVelocityDamping,
+                deltaTime * 60,
+              );
+
+            data.vx *= explosionVelocityDamping;
+            data.vy *= explosionVelocityDamping;
+            data.vz *= explosionVelocityDamping;
+          } else {
+            data.vx *= damping;
+            data.vy *= damping;
+            data.vz *= damping;
+          }
+        }
+
+        const speed =
+          Math.sqrt(
+            data.vx *
+                data.vx +
+              data.vy *
+                data.vy +
+              data.vz *
+                data.vz,
+          );
+
+        const maximumSpeed =
+          data.exploded
+            ? PHYSICS.explosionMaxVelocity
+            : PHYSICS.maxVelocity;
+
+        if (
+          speed >
+          maximumSpeed
+        ) {
+          const scale =
+            maximumSpeed /
+            speed;
+
+          data.vx *= scale;
+          data.vy *= scale;
+          data.vz *= scale;
+        }
+
+               bubble.position.x +=
+          data.vx *
+          deltaTime;
+
+        bubble.position.y +=
+          data.vy *
+          deltaTime;
+
+        bubble.position.z +=
+          data.vz *
+          deltaTime;
+
+        /*
+         * Keep normal bubbles inside the visible frustum
+         * so bigger radii can't push them off-screen.
+         */
+        if (selectedIndex !== i && !data.exploded) {
+          const fovRadians =
+            (camera.fov * Math.PI) / 180;
+
+          const distanceFromCamera =
+            camera.position.z -
+            bubble.position.z;
+
+          const visibleHeight =
+            2 *
+            Math.tan(fovRadians / 2) *
+            distanceFromCamera;
+
+          const visibleWidth =
+            visibleHeight * camera.aspect;
+
+          const effectiveRadius =
+            data.radius * data.baseScale;
+
+          const maxY =
+            visibleHeight / 2 -
+            effectiveRadius -
+            0.2;
+
+          const maxX =
+            visibleWidth / 2 -
+            effectiveRadius -
+            0.2;
+
+          bubble.position.y =
+            THREE.MathUtils.clamp(
+              bubble.position.y,
+              -maxY,
+              maxY,
+            );
+
+          bubble.position.x =
+            THREE.MathUtils.clamp(
+              bubble.position.x,
+              -maxX,
+              maxX,
+            );
+        }
+
+      }
+
+      /*
+       * --------------------------------------------------
+       * COLLISIONS
+       *
+       * Disable collisions once clicked.
+       * Otherwise the bubbles can fight the explosion.
+       * --------------------------------------------------
+       */
 
       if (
         selectedIndex === null
       ) {
+        /*
+         * Velocity collision force.
+         */
+
         for (
           let i = 0;
-          i < count;
+          i < bubbles.length;
           i++
         ) {
           for (
             let j = i + 1;
-            j < count;
+            j < bubbles.length;
             j++
           ) {
+            const bubbleA =
+              bubbles[i];
+
+            const bubbleB =
+              bubbles[j];
+
             const dx =
-              pX[j] -
-              pX[i];
+              bubbleB.position.x -
+              bubbleA.position.x;
 
             const dy =
-              pY[j] -
-              pY[i];
+              bubbleB.position.y -
+              bubbleA.position.y;
 
             const dz =
-              pZ[j] -
-              pZ[i];
+              bubbleB.position.z -
+              bubbleA.position.z;
 
-            const distance =
+            let distance =
               Math.sqrt(
                 dx * dx +
                   dy * dy +
-                  dz * dz
-              ) || 0.0001;
+                  dz * dz,
+              );
+
+            if (
+              distance <
+              0.0001
+            ) {
+              distance = 0.0001;
+            }
 
             const minimumDistance =
-              (radius[i] +
-                radius[j]) *
+              (bubbleA.userData
+                .radius +
+                bubbleB.userData
+                  .radius) *
               PHYSICS.collisionRadiusMultiplier;
 
             if (
@@ -2026,16 +1806,19 @@ gl_FragColor.rgb +=
                 PHYSICS.collisionStrength;
 
               const massA =
-                radius[i] *
-                radius[i];
+                bubbleA.userData
+                  .radius *
+                bubbleA.userData
+                  .radius;
 
               const massB =
-                radius[j] *
-                radius[j];
+                bubbleB.userData
+                  .radius *
+                bubbleB.userData
+                  .radius;
 
               const totalMass =
-                massA +
-                massB;
+                massA + massB;
 
               const shareA =
                 massB /
@@ -2045,595 +1828,416 @@ gl_FragColor.rgb +=
                 massA /
                 totalMass;
 
-              vX[i] -=
+              bubbleA.userData.vx -=
                 nx *
                 push *
                 shareA *
-                dt;
+                deltaTime;
 
-              vY[i] -=
+              bubbleA.userData.vy -=
                 ny *
                 push *
                 shareA *
-                dt;
+                deltaTime;
 
-              vZ[i] -=
+              bubbleA.userData.vz -=
                 nz *
                 push *
                 shareA *
-                dt;
+                deltaTime;
 
-              vX[j] +=
+              bubbleB.userData.vx +=
                 nx *
                 push *
                 shareB *
-                dt;
+                deltaTime;
 
-              vY[j] +=
+              bubbleB.userData.vy +=
                 ny *
                 push *
                 shareB *
-                dt;
+                deltaTime;
 
-              vZ[j] +=
+              bubbleB.userData.vz +=
                 nz *
                 push *
                 shareB *
-                dt;
+                deltaTime;
             }
+          }
+        }
+
+        /*
+         * Position solver.
+         */
+
+        for (
+          let iteration = 0;
+          iteration <
+          PHYSICS.collisionSolverIterations;
+          iteration++
+        ) {
+          let overlapFound =
+            false;
+
+          for (
+            let i = 0;
+            i < bubbles.length;
+            i++
+          ) {
+            for (
+              let j = i + 1;
+              j < bubbles.length;
+              j++
+            ) {
+              const bubbleA =
+                bubbles[i];
+
+              const bubbleB =
+                bubbles[j];
+
+              const dx =
+                bubbleB.position.x -
+                bubbleA.position.x;
+
+              const dy =
+                bubbleB.position.y -
+                bubbleA.position.y;
+
+              const dz =
+                bubbleB.position.z -
+                bubbleA.position.z;
+
+              let distance =
+                Math.sqrt(
+                  dx * dx +
+                    dy * dy +
+                    dz * dz,
+                );
+
+              const minimumDistance =
+                (bubbleA.userData
+                  .radius +
+                  bubbleB.userData
+                    .radius) *
+                PHYSICS.collisionRadiusMultiplier;
+
+              if (
+                distance <
+                minimumDistance
+              ) {
+                overlapFound =
+                  true;
+
+                if (
+                  distance <
+                  0.0001
+                ) {
+                  distance =
+                    0.0001;
+                }
+
+                const nx =
+                  dx / distance;
+
+                const ny =
+                  dy / distance;
+
+                const nz =
+                  dz / distance;
+
+                const correction =
+                  minimumDistance -
+                  distance;
+
+                const massA =
+                  bubbleA.userData
+                    .radius *
+                  bubbleA.userData
+                    .radius;
+
+                const massB =
+                  bubbleB.userData
+                    .radius *
+                  bubbleB.userData
+                    .radius;
+
+                const totalMass =
+                  massA + massB;
+
+                const shareA =
+                  massB /
+                  totalMass;
+
+                const shareB =
+                  massA /
+                  totalMass;
+
+                bubbleA.position.x -=
+                  nx *
+                  correction *
+                  shareA;
+
+                bubbleA.position.y -=
+                  ny *
+                  correction *
+                  shareA;
+
+                bubbleA.position.z -=
+                  nz *
+                  correction *
+                  shareA;
+
+                bubbleB.position.x +=
+                  nx *
+                  correction *
+                  shareB;
+
+                bubbleB.position.y +=
+                  ny *
+                  correction *
+                  shareB;
+
+                bubbleB.position.z +=
+                  nz *
+                  correction *
+                  shareB;
+              }
+            }
+          }
+
+          if (!overlapFound) {
+            break;
           }
         }
       }
 
-      /* ========================================================
-         DAMPING + POSITION
-      ======================================================== */
-
-      const damping =
-        Math.pow(
-          PHYSICS.damping,
-          dt * 60
-        );
+      /*
+       * --------------------------------------------------
+       * SCALE + BILLBOARD
+       * --------------------------------------------------
+       */
 
       for (
         let i = 0;
-        i < count;
+        i < bubbles.length;
         i++
       ) {
-        vX[i] *= damping;
-        vY[i] *= damping;
-        vZ[i] *= damping;
+        const bubble =
+          bubbles[i];
 
-        const speed =
-          Math.sqrt(
-            vX[i] *
-                vX[i] +
-              vY[i] *
-                vY[i] +
-              vZ[i] *
-                vZ[i]
+        const data =
+          bubble.userData;
+
+        data.baseScale =
+          THREE.MathUtils.lerp(
+            data.baseScale,
+            data.targetScale,
+            selectedIndex === i
+              ? PHYSICS.selectedLerp
+              : PHYSICS.explosionLerp,
           );
 
-        if (
-          speed >
-          PHYSICS.maxVelocity
-        ) {
-          const scale =
-            PHYSICS.maxVelocity /
-            speed;
-
-          vX[i] *= scale;
-          vY[i] *= scale;
-          vZ[i] *= scale;
-        }
-
-        pX[i] +=
-          vX[i] * dt;
-
-        pY[i] +=
-          vY[i] * dt;
-
-        pZ[i] +=
-          vZ[i] * dt;
-
-        /* ======================================================
-           SELECTED BUBBLE STAYS VISIBLE
-        ====================================================== */
-
-        if (
-          selectedIndex ===
-          i
-        ) {
-          pX[i] =
-            THREE.MathUtils.clamp(
-              pX[i],
-              -2.3,
-              2.3
-            );
-
-          pY[i] =
-            THREE.MathUtils.clamp(
-              pY[i],
-              -1.9,
-              1.9
-            );
-
-          pZ[i] =
-            THREE.MathUtils.clamp(
-              pZ[i],
-              -0.8,
-              1.2
-            );
-        }
-
-        /* ======================================================
-           ENTRANCE
-        ====================================================== */
-
-        const delay =
-          i *
-          PHYSICS.entranceStagger;
-
-        const entranceProgress =
-          THREE.MathUtils.clamp(
-            (entranceElapsed -
-              delay) /
-              PHYSICS.entranceDuration,
-            0,
-            1
-          );
-
-        const eased =
-          1 -
-          Math.pow(
-            1 -
-              entranceProgress,
-            3
-          );
-
-        let scale =
-          radius[i];
-
-        if (
-          entranceProgress < 1
-        ) {
-          scale =
-            radius[i] *
-            (0.72 +
-              eased * 0.28);
-        }
-
-        /* ======================================================
-           SELECTED SCALE
-        ====================================================== */
-
-        if (
-          selectedIndex ===
-          i
-        ) {
-          scale *=
-            THREE.MathUtils.lerp(
-              1,
-              PHYSICS.selectedBubbleScale,
-              0.9
-            );
-        }
-
-        /* ======================================================
-           OTHER BUBBLES
-        ====================================================== */
-
-        if (
-          selectedIndex !==
-            null &&
-          selectedIndex !==
-            i
-        ) {
-          const distanceFromCenter =
-            Math.sqrt(
-              pX[i] *
-                  pX[i] +
-                pY[i] *
-                  pY[i]
-            );
-
-          const fadeScale =
-            THREE.MathUtils.clamp(
-              1 -
-                Math.max(
-                  0,
-                  distanceFromCenter -
-                    2.2
-                ) *
-                  0.12,
-              0.18,
-              1
-            );
-
-          scale *=
-            fadeScale;
-        }
-
-        /* ======================================================
-           ROTATION
-        ====================================================== */
-
-        const velocityRotation =
-          vX[i] *
-          PHYSICS.rotationFromVelocity;
-
-        const rotation =
-          THREE.MathUtils.clamp(
-            velocityRotation,
-            -PHYSICS.maxRotationSpeed,
-            PHYSICS.maxRotationSpeed
-          );
-
-        dummy.position.set(
-          pX[i],
-          pY[i],
-          pZ[i]
+        bubble.scale.setScalar(
+          data.baseScale,
         );
 
-        dummy.scale.set(
-          scale,
-          scale,
-          scale
+        /*
+         * Face camera.
+         */
+
+        bubble.quaternion.copy(
+          camera.quaternion,
         );
-
-        dummy.rotation.x =
-          time *
-            bubbleParams[i]
-              .rotation +
-          rotation *
-            0.45;
-
-        dummy.rotation.y =
-          time *
-            bubbleParams[i]
-              .rotation *
-            1.3 +
-          rotation;
-
-        dummy.rotation.z =
-          rotation * 0.25;
-
-        dummy.updateMatrix();
-
-        meshRef.current.setMatrixAt(
-          i,
-          dummy.matrix
-        );
-
-        if (shellMeshRef.current) {
-          const shellScale = scale * 1.025;
-
-          dummy.scale.set(
-            shellScale,
-            shellScale,
-            shellScale
-          );
-
-          dummy.updateMatrix();
-
-          shellMeshRef.current.setMatrixAt(
-            i,
-            dummy.matrix
-          );
-        }
       }
 
-      meshRef.current.instanceMatrix.needsUpdate =
-        true;
+      /*
+       * --------------------------------------------------
+       * CAMERA MOVEMENT
+       * --------------------------------------------------
+       */
 
-      if (shellMeshRef.current) {
-        shellMeshRef.current.instanceMatrix.needsUpdate =
-          true;
-      }
+      camera.position.x +=
+        (mouse.x * 1.8 -
+          camera.position.x) *
+        0.045;
+
+      camera.position.y +=
+        (-mouse.y * 1.3 -
+          camera.position.y) *
+        0.045;
+
+      camera.lookAt(
+        0,
+        0,
+        0,
+      );
+
+      renderer.render(
+        scene,
+        camera,
+      );
     }
-  );
 
-  /* ============================================================
-     CLEANUP
-  ============================================================ */
+    animate();
 
-  useEffect(() => {
-    return () => {
-      if (
-        selectedTimerRef.current
-      ) {
-        clearTimeout(
-          selectedTimerRef.current
-        );
-      }
-    };
-  }, []);
+    /*
+     * --------------------------------------------------
+     * RESIZE
+     * --------------------------------------------------
+     */
 
-  /* ============================================================
-     RENDER
-  ============================================================ */
+    function handleResize() {
+      width =
+        mount.clientWidth;
 
-  if (
-    !material ||
-    !atlasMeta
-  ) {
-    return null;
-  }
+      height =
+        mount.clientHeight;
 
-  return (
-    <>
-      <instancedMesh
-        ref={meshRef}
-        args={[
-          geometry,
-          material,
-          count,
-        ]}
-        frustumCulled={false}
-        renderOrder={1}
-        onPointerMove={(e) => {
-        e.stopPropagation();
+      camera.aspect =
+        width / height;
 
-        currentMouse.current.set(
-          e.clientX,
-          e.clientY
-        );
+      camera.updateProjectionMatrix();
 
-        mouseHasMoved.current =
-          true;
-      }}
-      onPointerDown={(e) => {
-        e.stopPropagation();
+      renderer.setSize(
+        width,
+        height,
+      );
+    }
 
-        pointerDownRef.current = {
-          x: e.clientX,
-          y: e.clientY,
-          instanceId:
-            e.instanceId,
-        };
-      }}
-      onPointerUp={(e) => {
-        e.stopPropagation();
-
-        const down =
-          pointerDownRef.current;
-
-        pointerDownRef.current =
-          null;
-
-        if (
-          !down ||
-          down.instanceId ==
-            null
-        ) {
-          return;
-        }
-
-        const dx =
-          e.clientX -
-          down.x;
-
-        const dy =
-          e.clientY -
-          down.y;
-
-        const moved =
-          Math.sqrt(
-            dx * dx +
-              dy * dy
-          );
-
-        if (
-          moved < 8 &&
-          e.instanceId ===
-            down.instanceId
-        ) {
-          triggerExplosion(
-            down.instanceId
-          );
-        }
-        }}
-      />
-
-      <instancedMesh
-        ref={shellMeshRef}
-        args={[
-          geometry,
-          bubbleShellMaterial,
-          count,
-        ]}
-        frustumCulled={false}
-        renderOrder={2}
-        raycast={() => null}
-      />
-    </>
-  );
-}
-
-/* ================================================================
-   MAIN COMPONENT
-================================================================ */
-
-export default function ProjectBubbles({
-  projects,
-}) {
-  const list =
-    useMemo(
-      () =>
-        projects ??
-        PROJECTS,
-      [projects]
+    window.addEventListener(
+      "resize",
+      handleResize,
     );
 
-  const router =
-    useRouter();
+    /*
+     * --------------------------------------------------
+     * CLEANUP
+     * --------------------------------------------------
+     */
 
-  const pointerActiveRef =
-    useRef(false);
+    return () => {
+      cancelAnimationFrame(
+        frameId,
+      );
 
-  const [isLoading, setIsLoading] =
-    useState(true);
-
-  const handlePointerMove =
-    () => {
-      pointerActiveRef.current =
-        true;
-    };
-
-  const handleSelect =
-    (project) => {
-      if (!project?.slug) {
-        return;
+      if (navigateTimer) {
+        clearTimeout(
+          navigateTimer,
+        );
       }
 
-      router.push(
-        `/projects/${project.slug}`
+      window.removeEventListener(
+        "resize",
+        handleResize,
       );
+
+      window.removeEventListener(
+        "pointerup",
+        pointerUpHandler,
+      );
+
+      window.removeEventListener(
+        "pointercancel",
+        pointerUpHandler,
+      );
+
+      mount.removeEventListener(
+        "pointermove",
+        pointerMove,
+      );
+
+      mount.removeEventListener(
+        "pointerenter",
+        pointerEnter,
+      );
+
+      mount.removeEventListener(
+        "pointerleave",
+        pointerLeave,
+      );
+
+      mount.removeEventListener(
+        "pointerdown",
+        pointerDownHandler,
+      );
+
+      /*
+       * Dispose everything.
+       */
+
+      bubbles.forEach(
+        (bubble) => {
+          bubble.traverse(
+            (child) => {
+              if (!child.isMesh) {
+                return;
+              }
+
+              if (child.geometry) {
+                child.geometry.dispose();
+              }
+
+              if (child.material) {
+                const materials =
+                  Array.isArray(
+                    child.material,
+                  )
+                    ? child.material
+                    : [child.material];
+
+                materials.forEach(
+                  (material) => {
+                    if (
+                      material.map
+                    ) {
+                      material.map.dispose();
+                    }
+
+                    material.dispose();
+                  },
+                );
+              }
+            },
+          );
+
+          scene.remove(
+            bubble,
+          );
+        },
+      );
+
+      renderer.dispose();
+
+      if (
+        mount.contains(
+          renderer.domElement,
+        )
+      ) {
+        mount.removeChild(
+          renderer.domElement,
+        );
+      }
     };
+  }, [router]);
 
   return (
-    <section
-      className={
-        styles.wrapper
-      }
-      onPointerEnter={() => {
-        pointerActiveRef.current =
-          true;
+    <div
+      ref={mountRef}
+      style={{
+        width: "100%",
+        height: "100vh",
+
+ 
+
+        overflow: "hidden",
+
+        cursor: "grab",
+
+        touchAction: "none",
+
+        userSelect: "none",
       }}
-      onPointerMove={
-        handlePointerMove
-      }
-      onPointerDown={() => {
-        pointerActiveRef.current =
-          true;
-      }}
-      onPointerLeave={() => {
-        pointerActiveRef.current =
-          false;
-
-        mouseHasMovedReset();
-      }}
-      onPointerCancel={() => {
-        pointerActiveRef.current =
-          false;
-      }}
-    >
-      {isLoading && (
-        <div
-          className={
-            styles.loader
-          }
-        >
-          <div
-            className={
-              styles.spinner
-            }
-          />
-        </div>
-      )}
-
-      <Canvas
-        className={
-          styles.canvas
-        }
-        dpr={[1, 1.5]}
-        camera={{
-          position: [
-            0,
-            0,
-            7,
-          ],
-          fov: 42,
-        }}
-        gl={{
-          antialias: true,
-          alpha: true,
-          powerPreference:
-            "high-performance",
-        }}
-      >
-        {/* =====================================================
-            BASE LIGHT
-        ===================================================== */}
-
-        <ambientLight
-          intensity={0.65}
-        />
-
-        {/* Main upper-left light */}
-        <directionalLight
-          position={[
-            -4,
-            6,
-            7,
-          ]}
-          intensity={4.0}
-        />
-
-        {/* Front fill */}
-        <directionalLight
-          position={[
-            5,
-            1,
-            6,
-          ]}
-          intensity={2.0}
-        />
-
-        {/* Lower soft light */}
-        <pointLight
-          position={[
-            3,
-            -4,
-            4,
-          ]}
-          intensity={1.5}
-          distance={14}
-        />
-
-        {/* Small edge light */}
-        <pointLight
-          position={[
-            -5,
-            2,
-            3,
-          ]}
-          intensity={2.0}
-          distance={14}
-        />
-
-        {/* =====================================================
-            STUDIO ENVIRONMENT
-        ===================================================== */}
-
-        <Environment
-          preset="studio"
-          resolution={256}
-        />
-
-        <BubbleField
-          projects={list}
-          onSelect={
-            handleSelect
-          }
-          pointerActiveRef={
-            pointerActiveRef
-          }
-          onLoadingChange={
-            setIsLoading
-          }
-        />
-      </Canvas>
-    </section>
+    />
   );
-}
-
-/* ================================================================
-   SMALL HELPER
-================================================================ */
-
-function mouseHasMovedReset() {
-  /*
-   * Pointer state is controlled by the canvas component.
-   */
 }
