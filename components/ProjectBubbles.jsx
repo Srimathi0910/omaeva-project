@@ -554,11 +554,11 @@ export default function GlassBubbles() {
         Math.sin(angle) *
         distance;
 
-      const y =
-        Math.cos(angle) *
-        distance *
-        0.78 -
-        0.6;
+        const y =
+  Math.cos(angle) *
+  distance *
+  0.78 -
+  0.1;
 
       const z =
         (Math.random() - 0.5) *
