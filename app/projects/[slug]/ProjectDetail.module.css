@@ -290,7 +290,8 @@
   background: #f9fafb;
   border-radius: 16px;
   padding: 32px;
-
+ align-items: center;   /* centers icon + text horizontally */
+  text-align: center; 
   display: flex;
   flex-direction: column;
   gap: 16px;

@@ -41,7 +41,7 @@ const PHYSICS = {
   damping: 0.9,
   maxVelocity: 6,
 
-  wanderStep: 0.18,
+  wanderStep: 0.28,
   wanderChangeInterval: [2.2, 4.5],
 
   // Mouse interaction
@@ -89,23 +89,31 @@ const PHYSICS = {
  * Tune the breakpoints/values to taste.
  * --------------------------------------------------
  */
-
-
-// function getDeviceBubbleScale(width) {
-//   if (width < 400) return 0.5;   // very small phones
-//   if (width < 640) return 0.62;  // phones
-//   if (width < 768) return 0.72;  // large phones / small tablets
-//   if (width < 1024) return 0.85; // tablets
-//   if (width < 1440) return 1.0;  // laptops / desktops
-//   return 1.12;                   // large / wide desktop screens
-// }
 function getDeviceBubbleScale(width) {
-  if (width < 400) return 1.02;  // was 0.5
-  if (width < 640) return 1.95;  // was 0.62
-  if (width < 768) return 0.72;
-  if (width < 1024) return 0.85;
-  if (width < 1440) return 1.0;
-  return 1.12;
+  if (width < 400) return 0.75; // very small phones
+  if (width < 640) return 0.85; // phones
+  if (width < 768) return 0.72; // large phones / small tablets
+  if (width < 1024) return 0.85; // tablets
+  if (width < 1440) return 1.0; // laptops / desktops
+  return 1.12; // large / wide desktop screens
+}
+
+/*
+ * --------------------------------------------------
+ * RESPONSIVE EXPLOSION FORCE
+ *
+ * Small screens have a much smaller visible frustum,
+ * so the same explosion force that looks good on
+ * desktop will fling bubbles off-canvas on mobile.
+ * This scales the outward force down on small screens.
+ * --------------------------------------------------
+ */
+function getDeviceExplosionScale(width) {
+  if (width < 400) return 0.35;
+  if (width < 640) return 0.45;
+  if (width < 768) return 0.6;
+  if (width < 1024) return 0.8;
+  return 1.0;
 }
 
 function createHighlightMesh(size) {
@@ -221,6 +229,9 @@ export default function GlassBubbles() {
 
     // Current device-based multiplier applied to bubble radii.
     let deviceScale = getDeviceBubbleScale(width);
+
+    // Current device-based multiplier applied to explosion force.
+    let explosionScale = getDeviceExplosionScale(width);
 
     const scene = new THREE.Scene();
 
@@ -522,7 +533,7 @@ export default function GlassBubbles() {
         wanderDirY: 0,
         wanderDirZ: 0,
 
-        floatSpeed: 0.25 + Math.random() * 0.35,
+        floatSpeed: 1.95 + Math.random() * 1.95,
 
         floatAmp: 0.25 + Math.random() * 0.35,
 
@@ -814,34 +825,48 @@ export default function GlassBubbles() {
 
         /*
          * Initial velocity.
+         * Scaled by explosionScale so small screens
+         * don't fling bubbles off-canvas.
          */
 
-        data.vx += direction.x * PHYSICS.explosionOutwardVelocity * falloff;
+        data.vx +=
+          direction.x *
+          PHYSICS.explosionOutwardVelocity *
+          falloff *
+          explosionScale;
 
-        data.vy += direction.y * PHYSICS.explosionOutwardVelocity * falloff;
+        data.vy +=
+          direction.y *
+          PHYSICS.explosionOutwardVelocity *
+          falloff *
+          explosionScale;
 
-        data.vz += direction.z * PHYSICS.explosionOutwardVelocity * falloff;
+        data.vz +=
+          direction.z *
+          PHYSICS.explosionOutwardVelocity *
+          falloff *
+          explosionScale;
 
         /*
          * Small random variation makes the
          * explosion organic instead of perfect.
          */
 
-        data.vx += (Math.random() - 0.5) * 0.7;
+        data.vx += (Math.random() - 0.5) * 0.7 * explosionScale;
 
-        data.vy += (Math.random() - 0.5) * 0.7;
+        data.vy += (Math.random() - 0.5) * 0.7 * explosionScale;
 
-        data.vz += (Math.random() - 0.5) * 0.4;
+        data.vz += (Math.random() - 0.5) * 0.4 * explosionScale;
 
         /*
          * Extra immediate push.
          */
 
-        data.vx += direction.x * strength * 0.18;
+        data.vx += direction.x * strength * 0.18 * explosionScale;
 
-        data.vy += direction.y * strength * 0.18;
+        data.vy += direction.y * strength * 0.18 * explosionScale;
 
-        data.vz += direction.z * strength * 0.18;
+        data.vz += direction.z * strength * 0.18 * explosionScale;
       }
 
       /*
@@ -1034,7 +1059,8 @@ export default function GlassBubbles() {
             1,
           );
 
-          const push = PHYSICS.explosionStrength * pushFade * distanceFade;
+          const push =
+            PHYSICS.explosionStrength * pushFade * distanceFade * explosionScale;
 
           data.vx += data.explosionDirX * push * deltaTime;
 
@@ -1070,9 +1096,10 @@ export default function GlassBubbles() {
           bubble.rotation.z += 0.12 * deltaTime;
 
           /*
-           * Don't let normal wandering
-           * pull these bubbles back into
-           * the cluster.
+           * Note: exploded bubbles still fall through to the
+           * shared bounds-clamp below (in the velocity/position
+           * loop) so they can't fly off screen — they just get
+           * a bit more room than idle bubbles.
            */
 
           continue;
@@ -1283,10 +1310,14 @@ export default function GlassBubbles() {
         bubble.position.z += data.vz * deltaTime;
 
         /*
-         * Keep normal bubbles inside the visible frustum
-         * so bigger radii can't push them off-screen.
+         * Keep all non-selected bubbles inside the visible
+         * frustum so bigger radii — and exploding bubbles —
+         * can't push them off-screen. Exploded bubbles get a
+         * bit more room (overflowFactor) so the burst still
+         * reads as an explosion instead of stopping dead at
+         * the same boundary as idle bubbles.
          */
-        if (selectedIndex !== i && !data.exploded) {
+        if (selectedIndex !== i) {
           const fovRadians = (camera.fov * Math.PI) / 180;
 
           const distanceFromCamera = camera.position.z - bubble.position.z;
@@ -1298,9 +1329,12 @@ export default function GlassBubbles() {
 
           const effectiveRadius = data.radius * data.baseScale;
 
-          const maxY = visibleHeight / 2 - effectiveRadius - 0.2;
+const overflowFactor = 1.0;
+          const maxY =
+            (visibleHeight / 2) * overflowFactor - effectiveRadius - 0.2;
 
-          const maxX = visibleWidth / 2 - effectiveRadius - 0.2;
+          const maxX =
+            (visibleWidth / 2) * overflowFactor - effectiveRadius - 0.2;
 
           bubble.position.y = THREE.MathUtils.clamp(
             bubble.position.y,
@@ -1525,6 +1559,9 @@ export default function GlassBubbles() {
 
       // Recompute and apply the device-based bubble size.
       applyDeviceScale(getDeviceBubbleScale(width));
+
+      // Recompute the device-based explosion force scale.
+      explosionScale = getDeviceExplosionScale(width);
     }
 
     window.addEventListener("resize", handleResize);
@@ -1596,17 +1633,17 @@ export default function GlassBubbles() {
     };
   }, [router]);
 
- return (
-  <div
-    ref={mountRef}
-    className="bubble-canvas-mount"
-    style={{
-      width: "100%",
-      overflow: "hidden",
-      cursor: "grab",
-      touchAction: "none",
-      userSelect: "none",
-    }}
-  />
-);
+  return (
+    <div
+      ref={mountRef}
+      className="bubble-canvas-mount"
+      style={{
+        width: "100%",
+        overflow: "hidden",
+        cursor: "grab",
+        touchAction: "none",
+        userSelect: "none",
+      }}
+    />
+  );
 }
