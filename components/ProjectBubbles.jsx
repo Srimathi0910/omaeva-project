@@ -89,13 +89,23 @@ const PHYSICS = {
  * Tune the breakpoints/values to taste.
  * --------------------------------------------------
  */
+
+
+// function getDeviceBubbleScale(width) {
+//   if (width < 400) return 0.5;   // very small phones
+//   if (width < 640) return 0.62;  // phones
+//   if (width < 768) return 0.72;  // large phones / small tablets
+//   if (width < 1024) return 0.85; // tablets
+//   if (width < 1440) return 1.0;  // laptops / desktops
+//   return 1.12;                   // large / wide desktop screens
+// }
 function getDeviceBubbleScale(width) {
-  if (width < 400) return 0.5; // very small phones
-  if (width < 640) return 0.62; // phones
-  if (width < 768) return 0.72; // large phones / small tablets
-  if (width < 1024) return 0.85; // tablets
-  if (width < 1440) return 1.0; // laptops / desktops
-  return 1.12; // large / wide desktop screens
+  if (width < 400) return 1.02;  // was 0.5
+  if (width < 640) return 1.95;  // was 0.62
+  if (width < 768) return 0.72;
+  if (width < 1024) return 0.85;
+  if (width < 1440) return 1.0;
+  return 1.12;
 }
 
 function createHighlightMesh(size) {
@@ -149,16 +159,14 @@ function domeSurfacePoint(
   const bulgeHeight = radius * bulgeRatio;
 
   const sphereRadius =
-    (radius * radius + bulgeHeight * bulgeHeight) /
-    (2 * bulgeHeight);
+    (radius * radius + bulgeHeight * bulgeHeight) / (2 * bulgeHeight);
 
   const radialDistance = normalizedRadius * radius;
 
   const z =
     Math.sqrt(
       Math.max(
-        sphereRadius * sphereRadius -
-          radialDistance * radialDistance,
+        sphereRadius * sphereRadius - radialDistance * radialDistance,
         0,
       ),
     ) -
@@ -216,12 +224,7 @@ export default function GlassBubbles() {
 
     const scene = new THREE.Scene();
 
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      width / height,
-      0.1,
-      100,
-    );
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
 
     camera.position.set(0, 0, 15);
 
@@ -232,9 +235,7 @@ export default function GlassBubbles() {
 
     renderer.setSize(width, height);
 
-    renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio, 2),
-    );
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -246,37 +247,23 @@ export default function GlassBubbles() {
      * --------------------------------------------------
      */
 
-    const hemisphereLight = new THREE.HemisphereLight(
-      0xffffff,
-      0x17051f,
-      1.4,
-    );
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x17051f, 1.4);
 
     scene.add(hemisphereLight);
 
-    const keyLight = new THREE.DirectionalLight(
-      0xffffff,
-      1.7,
-    );
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.7);
 
     keyLight.position.set(6, 9, 10);
 
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(
-      0x9fc0ff,
-      1.0,
-    );
+    const rimLight = new THREE.DirectionalLight(0x9fc0ff, 1.0);
 
     rimLight.position.set(-8, -3, -5);
 
     scene.add(rimLight);
 
-    const fillLight = new THREE.PointLight(
-      0xffffff,
-      1.0,
-      60,
-    );
+    const fillLight = new THREE.PointLight(0xffffff, 1.0, 60);
 
     fillLight.position.set(-3, 3, 9);
 
@@ -304,8 +291,7 @@ export default function GlassBubbles() {
       const project = PROJECTS[i % PROJECTS.length];
 
       // Base random radius, before device scaling is applied.
-      const baseRadius =
-        1.35 + Math.random() * 0.40;
+      const baseRadius = 1.35 + Math.random() * 0.4;
 
       // Actual radius used for this bubble's geometry/physics,
       // scaled for the current device/viewport size.
@@ -317,18 +303,17 @@ export default function GlassBubbles() {
        * Glass material
        */
 
-      const material =
-        new THREE.MeshPhysicalMaterial({
-          roughness: 0.28,
-          metalness: 0,
-          clearcoat: 1,
-          clearcoatRoughness: 0.08,
-          reflectivity: 0.8,
-          ior: 1.42,
+      const material = new THREE.MeshPhysicalMaterial({
+        roughness: 0.28,
+        metalness: 0,
+        clearcoat: 1,
+        clearcoatRoughness: 0.08,
+        reflectivity: 0.8,
+        ior: 1.42,
 
-          transparent: true,
-          opacity: 0.98,
-        });
+        transparent: true,
+        opacity: 0.98,
+      });
 
       /*
        * Shader enhancement
@@ -343,7 +328,8 @@ export default function GlassBubbles() {
           value: 0,
         };
 
-        shader.vertexShader = `
+        shader.vertexShader =
+          `
           varying vec3 vWorldPosition;
           varying vec3 vNormalWorld;
           varying vec2 vBubbleUv;
@@ -353,10 +339,9 @@ export default function GlassBubbles() {
 
         ` + shader.vertexShader;
 
-        shader.vertexShader =
-          shader.vertexShader.replace(
-            "#include <begin_vertex>",
-            `
+        shader.vertexShader = shader.vertexShader.replace(
+          "#include <begin_vertex>",
+          `
               #include <begin_vertex>
 
               vBubbleUv = uv;
@@ -373,9 +358,10 @@ export default function GlassBubbles() {
                   transformedNormal
                 );
             `,
-          );
+        );
 
-        shader.fragmentShader = `
+        shader.fragmentShader =
+          `
           varying vec3 vWorldPosition;
           varying vec3 vNormalWorld;
           varying vec2 vBubbleUv;
@@ -385,10 +371,9 @@ export default function GlassBubbles() {
 
         ` + shader.fragmentShader;
 
-        shader.fragmentShader =
-          shader.fragmentShader.replace(
-            "#include <dithering_fragment>",
-            `
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "#include <dithering_fragment>",
+          `
               #include <dithering_fragment>
 
               float fresnel =
@@ -424,7 +409,7 @@ export default function GlassBubbles() {
                 glassGlow *
                 glowStrength;
             `,
-          );
+        );
 
         material.userData.shader = shader;
       };
@@ -436,8 +421,7 @@ export default function GlassBubbles() {
       let texture = textureLoader.load(
         project.image,
         (loadedTexture) => {
-          loadedTexture.colorSpace =
-            THREE.SRGBColorSpace;
+          loadedTexture.colorSpace = THREE.SRGBColorSpace;
 
           material.map = loadedTexture;
 
@@ -453,8 +437,7 @@ export default function GlassBubbles() {
         },
       );
 
-      texture.colorSpace =
-        THREE.SRGBColorSpace;
+      texture.colorSpace = THREE.SRGBColorSpace;
 
       material.map = texture;
 
@@ -462,17 +445,9 @@ export default function GlassBubbles() {
        * Sphere
        */
 
-      const geometry =
-        new THREE.SphereGeometry(
-          radius,
-          48,
-          48,
-        );
+      const geometry = new THREE.SphereGeometry(radius, 48, 48);
 
-      const dome = new THREE.Mesh(
-        geometry,
-        material,
-      );
+      const dome = new THREE.Mesh(geometry, material);
 
       dome.userData.bubbleIndex = i;
 
@@ -484,50 +459,26 @@ export default function GlassBubbles() {
        * Glass highlights
        */
 
-      const dotCount =
-        2 + Math.floor(Math.random() * 2);
+      const dotCount = 2 + Math.floor(Math.random() * 2);
 
-      for (
-        let dotIndex = 0;
-        dotIndex < dotCount;
-        dotIndex++
-      ) {
+      for (let dotIndex = 0; dotIndex < dotCount; dotIndex++) {
         const normalizedRadius =
-          dotIndex === 0
-            ? 0.32
-            : 0.5 + Math.random() * 0.25;
+          dotIndex === 0 ? 0.32 : 0.5 + Math.random() * 0.25;
 
-        const theta =
-          dotIndex === 0
-            ? 2.35
-            : 2.1 +
-              (Math.random() - 0.5) *
-                0.9;
+        const theta = dotIndex === 0 ? 2.35 : 2.1 + (Math.random() - 0.5) * 0.9;
 
-        const [
-          highlightX,
-          highlightY,
-          highlightZ,
-        ] = domeSurfacePoint(
+        const [highlightX, highlightY, highlightZ] = domeSurfacePoint(
           radius,
           bulge,
           normalizedRadius,
           theta,
         );
 
-        const dotSize =
-          (dotIndex === 0
-            ? 0.16
-            : 0.07) * radius;
+        const dotSize = (dotIndex === 0 ? 0.16 : 0.07) * radius;
 
-        const highlight =
-          createHighlightMesh(dotSize);
+        const highlight = createHighlightMesh(dotSize);
 
-        highlight.position.set(
-          highlightX,
-          highlightY,
-          highlightZ,
-        );
+        highlight.position.set(highlightX, highlightY, highlightZ);
 
         group.add(highlight);
       }
@@ -541,34 +492,18 @@ export default function GlassBubbles() {
        * ------------------------------------------------
        */
 
-      const angle =
-        (Math.random() - 0.5) *
-        PHYSICS.spreadAngle;
+      const angle = (Math.random() - 0.5) * PHYSICS.spreadAngle;
 
-      const distance =
-        Math.pow(Math.random(), 1.7) *
-        2.0;
+      const distance = Math.pow(Math.random(), 1.7) * 2.0;
 
       // sin -> full left/right width, cos -> upper 180° dome only
-      const x =
-        Math.sin(angle) *
-        distance;
+      const x = Math.sin(angle) * distance;
 
-        const y =
-  Math.cos(angle) *
-  distance *
-  0.78 -
-  0.1;
+      const y = Math.cos(angle) * distance * 0.78 - 0.1;
 
-      const z =
-        (Math.random() - 0.5) *
-        2.0;
+      const z = (Math.random() - 0.5) * 2.0;
 
-      group.position.set(
-        x,
-        y,
-        z,
-      );
+      group.position.set(x, y, z);
 
       /*
        * Physics state
@@ -587,23 +522,13 @@ export default function GlassBubbles() {
         wanderDirY: 0,
         wanderDirZ: 0,
 
-        floatSpeed:
-          0.25 +
-          Math.random() * 0.35,
+        floatSpeed: 0.25 + Math.random() * 0.35,
 
-        floatAmp:
-          0.25 +
-          Math.random() * 0.35,
+        floatAmp: 0.25 + Math.random() * 0.35,
 
-        phase:
-          Math.random() *
-          Math.PI *
-          2,
+        phase: Math.random() * Math.PI * 2,
 
-        drift:
-          Math.random() *
-          Math.PI *
-          2,
+        drift: Math.random() * Math.PI * 2,
 
         texture,
 
@@ -677,11 +602,7 @@ export default function GlassBubbles() {
           // The main glass sphere: rebuild geometry at new radius.
           if (child.geometry?.type === "SphereGeometry") {
             child.geometry.dispose();
-            child.geometry = new THREE.SphereGeometry(
-              newRadius,
-              48,
-              48,
-            );
+            child.geometry = new THREE.SphereGeometry(newRadius, 48, 48);
           }
         });
       });
@@ -700,34 +621,19 @@ export default function GlassBubbles() {
       y: 0,
     };
 
-    const ndc =
-      new THREE.Vector2(
-        9999,
-        9999,
-      );
+    const ndc = new THREE.Vector2(9999, 9999);
 
-    const raycaster =
-      new THREE.Raycaster();
+    const raycaster = new THREE.Raycaster();
 
     /*
      * Plane used for mouse physics.
      */
 
-    const groundPlane =
-      new THREE.Plane(
-        new THREE.Vector3(0, 0, 1),
-        0,
-      );
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
 
-    const mouseWorld =
-      new THREE.Vector3(
-        9999,
-        9999,
-        0,
-      );
+    const mouseWorld = new THREE.Vector3(9999, 9999, 0);
 
-    const planeHit =
-      new THREE.Vector3();
+    const planeHit = new THREE.Vector3();
 
     let pointerActive = false;
 
@@ -744,38 +650,15 @@ export default function GlassBubbles() {
      */
 
     function updatePointer(event) {
-      const rect =
-        mount.getBoundingClientRect();
+      const rect = mount.getBoundingClientRect();
 
-      mouse.x =
-        ((event.clientX -
-          rect.left) /
-          rect.width -
-          0.5) *
-        2;
+      mouse.x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
 
-      mouse.y =
-        ((event.clientY -
-          rect.top) /
-          rect.height -
-          0.5) *
-        2;
+      mouse.y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
 
-      ndc.x =
-        ((event.clientX -
-          rect.left) /
-          rect.width) *
-          2 -
-        1;
+      ndc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
 
-      ndc.y =
-        -(
-          ((event.clientY -
-            rect.top) /
-            rect.height) *
-            2 -
-          1
-        );
+      ndc.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
     }
 
     function pointerMove(event) {
@@ -793,11 +676,7 @@ export default function GlassBubbles() {
     function pointerLeave() {
       pointerActive = false;
 
-      mouseWorld.set(
-        9999,
-        9999,
-        0,
-      );
+      mouseWorld.set(9999, 9999, 0);
     }
 
     /*
@@ -811,26 +690,15 @@ export default function GlassBubbles() {
 
       pointerActive = true;
 
-      raycaster.setFromCamera(
-        ndc,
-        camera,
-      );
+      raycaster.setFromCamera(ndc, camera);
 
-      const hits =
-        raycaster.intersectObjects(
-          domeMeshes,
-          false,
-        );
+      const hits = raycaster.intersectObjects(domeMeshes, false);
 
       pointerDown = {
         x: event.clientX,
         y: event.clientY,
 
-        index:
-          hits.length > 0
-            ? hits[0].object.userData
-                .bubbleIndex
-            : null,
+        index: hits.length > 0 ? hits[0].object.userData.bubbleIndex : null,
       };
     }
 
@@ -846,19 +714,15 @@ export default function GlassBubbles() {
      */
 
     function explodeBubble(selected) {
-      if (
-        selectedIndex !== null
-      ) {
+      if (selectedIndex !== null) {
         return;
       }
 
       selectedIndex = selected;
 
-      const selectedBubble =
-        bubbles[selected];
+      const selectedBubble = bubbles[selected];
 
-      const selectedPosition =
-        selectedBubble.position.clone();
+      const selectedPosition = selectedBubble.position.clone();
 
       /*
        * Selected bubble:
@@ -868,45 +732,32 @@ export default function GlassBubbles() {
        * - moves slightly toward camera
        */
 
-      selectedBubble.userData.targetScale =
-        PHYSICS.selectedScale;
+      selectedBubble.userData.targetScale = PHYSICS.selectedScale;
 
       selectedBubble.userData.vx +=
-        -selectedBubble.position.x *
-        PHYSICS.selectedCenterStrength;
+        -selectedBubble.position.x * PHYSICS.selectedCenterStrength;
 
       selectedBubble.userData.vy +=
-        -selectedBubble.position.y *
-        PHYSICS.selectedCenterStrength;
+        -selectedBubble.position.y * PHYSICS.selectedCenterStrength;
 
-      selectedBubble.userData.vz +=
-        PHYSICS.selectedForward;
+      selectedBubble.userData.vz += PHYSICS.selectedForward;
 
       /*
        * Push every other bubble away.
        */
 
-      for (
-        let i = 0;
-        i < bubbles.length;
-        i++
-      ) {
+      for (let i = 0; i < bubbles.length; i++) {
         if (i === selected) {
           continue;
         }
 
         const bubble = bubbles[i];
 
-        const data =
-          bubble.userData;
+        const data = bubble.userData;
 
-        const direction =
-          bubble.position
-            .clone()
-            .sub(selectedPosition);
+        const direction = bubble.position.clone().sub(selectedPosition);
 
-        let distance =
-          direction.length();
+        let distance = direction.length();
 
         /*
          * Prevent zero-length direction.
@@ -919,8 +770,7 @@ export default function GlassBubbles() {
             Math.random() - 0.5,
           );
 
-          distance =
-            direction.length();
+          distance = direction.length();
         }
 
         direction.normalize();
@@ -930,46 +780,33 @@ export default function GlassBubbles() {
          * stronger force.
          */
 
-        const proximity =
-          THREE.MathUtils.clamp(
-            1 -
-              distance /
-                PHYSICS.explosionRadius,
-            0,
-            1,
-          );
+        const proximity = THREE.MathUtils.clamp(
+          1 - distance / PHYSICS.explosionRadius,
+          0,
+          1,
+        );
 
         /*
          * Strong near center,
          * softer farther away.
          */
 
-        const falloff =
-          0.35 +
-          proximity *
-            proximity *
-            2.2;
+        const falloff = 0.35 + proximity * proximity * 2.2;
 
-        const strength =
-          PHYSICS.explosionStrength *
-          falloff;
+        const strength = PHYSICS.explosionStrength * falloff;
 
         /*
          * Store the direction so the
          * explosion continues visually.
          */
 
-        data.explosionDirX =
-          direction.x;
+        data.explosionDirX = direction.x;
 
-        data.explosionDirY =
-          direction.y;
+        data.explosionDirY = direction.y;
 
-        data.explosionDirZ =
-          direction.z;
+        data.explosionDirZ = direction.z;
 
-        data.explosionDistance =
-          distance;
+        data.explosionDistance = distance;
 
         data.exploded = true;
 
@@ -979,56 +816,32 @@ export default function GlassBubbles() {
          * Initial velocity.
          */
 
-        data.vx +=
-          direction.x *
-          PHYSICS.explosionOutwardVelocity *
-          falloff;
+        data.vx += direction.x * PHYSICS.explosionOutwardVelocity * falloff;
 
-        data.vy +=
-          direction.y *
-          PHYSICS.explosionOutwardVelocity *
-          falloff;
+        data.vy += direction.y * PHYSICS.explosionOutwardVelocity * falloff;
 
-        data.vz +=
-          direction.z *
-          PHYSICS.explosionOutwardVelocity *
-          falloff;
+        data.vz += direction.z * PHYSICS.explosionOutwardVelocity * falloff;
 
         /*
          * Small random variation makes the
          * explosion organic instead of perfect.
          */
 
-        data.vx +=
-          (Math.random() - 0.5) *
-          0.7;
+        data.vx += (Math.random() - 0.5) * 0.7;
 
-        data.vy +=
-          (Math.random() - 0.5) *
-          0.7;
+        data.vy += (Math.random() - 0.5) * 0.7;
 
-        data.vz +=
-          (Math.random() - 0.5) *
-          0.4;
+        data.vz += (Math.random() - 0.5) * 0.4;
 
         /*
          * Extra immediate push.
          */
 
-        data.vx +=
-          direction.x *
-          strength *
-          0.18;
+        data.vx += direction.x * strength * 0.18;
 
-        data.vy +=
-          direction.y *
-          strength *
-          0.18;
+        data.vy += direction.y * strength * 0.18;
 
-        data.vz +=
-          direction.z *
-          strength *
-          0.18;
+        data.vz += direction.z * strength * 0.18;
       }
 
       /*
@@ -1036,26 +849,16 @@ export default function GlassBubbles() {
        */
 
       if (navigateTimer) {
-        clearTimeout(
-          navigateTimer,
-        );
+        clearTimeout(navigateTimer);
       }
 
-      navigateTimer =
-        setTimeout(() => {
-          const project =
-            selectedBubble.userData
-              .project;
+      navigateTimer = setTimeout(() => {
+        const project = selectedBubble.userData.project;
 
-          if (
-            project &&
-            project.slug
-          ) {
-            router.push(
-              `/projects/${project.slug}`,
-            );
-          }
-        }, PHYSICS.navigateDelay);
+        if (project && project.slug) {
+          router.push(`/projects/${project.slug}`);
+        }
+      }, PHYSICS.navigateDelay);
     }
 
     /*
@@ -1065,72 +868,40 @@ export default function GlassBubbles() {
      */
 
     function pointerUpHandler(event) {
-      const down =
-        pointerDown;
+      const down = pointerDown;
 
       pointerDown = null;
 
-      if (
-        !down ||
-        down.index === null
-      ) {
+      if (!down || down.index === null) {
         return;
       }
 
-      const deltaX =
-        event.clientX -
-        down.x;
+      const deltaX = event.clientX - down.x;
 
-      const deltaY =
-        event.clientY -
-        down.y;
+      const deltaY = event.clientY - down.y;
 
-      const distance =
-        Math.sqrt(
-          deltaX * deltaX +
-            deltaY * deltaY,
-        );
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
       /*
        * Small movement = click/tap.
        */
 
       if (distance < 14) {
-        explodeBubble(
-          down.index,
-        );
+        explodeBubble(down.index);
       }
     }
 
-    mount.addEventListener(
-      "pointermove",
-      pointerMove,
-    );
+    mount.addEventListener("pointermove", pointerMove);
 
-    mount.addEventListener(
-      "pointerenter",
-      pointerEnter,
-    );
+    mount.addEventListener("pointerenter", pointerEnter);
 
-    mount.addEventListener(
-      "pointerleave",
-      pointerLeave,
-    );
+    mount.addEventListener("pointerleave", pointerLeave);
 
-    mount.addEventListener(
-      "pointerdown",
-      pointerDownHandler,
-    );
+    mount.addEventListener("pointerdown", pointerDownHandler);
 
-    window.addEventListener(
-      "pointerup",
-      pointerUpHandler,
-    );
+    window.addEventListener("pointerup", pointerUpHandler);
 
-    window.addEventListener(
-      "pointercancel",
-      pointerUpHandler,
-    );
+    window.addEventListener("pointercancel", pointerUpHandler);
 
     /*
      * --------------------------------------------------
@@ -1138,46 +909,28 @@ export default function GlassBubbles() {
      * --------------------------------------------------
      */
 
-    const clock =
-      new THREE.Clock();
+    const clock = new THREE.Clock();
 
     let frameId = 0;
 
     function animate() {
-      frameId =
-        requestAnimationFrame(
-          animate,
-        );
+      frameId = requestAnimationFrame(animate);
 
-      const deltaTime =
-        Math.min(
-          clock.getDelta(),
-          PHYSICS.maxDeltaTime,
-        );
+      const deltaTime = Math.min(clock.getDelta(), PHYSICS.maxDeltaTime);
 
-      const elapsed =
-        clock.elapsedTime;
+      const elapsed = clock.elapsedTime;
 
       /*
        * Update mouse world position.
        */
 
       if (pointerActive) {
-        raycaster.setFromCamera(
-          ndc,
-          camera,
-        );
+        raycaster.setFromCamera(ndc, camera);
 
-        const hit =
-          raycaster.ray.intersectPlane(
-            groundPlane,
-            planeHit,
-          );
+        const hit = raycaster.ray.intersectPlane(groundPlane, planeHit);
 
         if (hit) {
-          mouseWorld.copy(
-            planeHit,
-          );
+          mouseWorld.copy(planeHit);
         }
       }
 
@@ -1187,16 +940,10 @@ export default function GlassBubbles() {
        * ------------------------------------------------
        */
 
-      for (
-        let i = 0;
-        i < bubbles.length;
-        i++
-      ) {
-        const bubble =
-          bubbles[i];
+      for (let i = 0; i < bubbles.length; i++) {
+        const bubble = bubbles[i];
 
-        const data =
-          bubble.userData;
+        const data = bubble.userData;
 
         const {
           radius,
@@ -1212,14 +959,8 @@ export default function GlassBubbles() {
          * Shader animation.
          */
 
-        if (
-          material?.userData
-            ?.shader
-        ) {
-          material.userData
-            .shader.uniforms
-            .uTime.value =
-            elapsed;
+        if (material?.userData?.shader) {
+          material.userData.shader.uniforms.uTime.value = elapsed;
         }
 
         /*
@@ -1227,15 +968,9 @@ export default function GlassBubbles() {
          */
 
         texture.offset.set(
-          Math.sin(
-            elapsed * 0.15 +
-              drift,
-          ) * 0.01,
+          Math.sin(elapsed * 0.15 + drift) * 0.01,
 
-          Math.cos(
-            elapsed * 0.12 +
-              drift,
-          ) * 0.01,
+          Math.cos(elapsed * 0.12 + drift) * 0.01,
         );
 
         /*
@@ -1244,36 +979,26 @@ export default function GlassBubbles() {
          * ------------------------------------------------
          */
 
-        if (
-          selectedIndex === i
-        ) {
+        if (selectedIndex === i) {
           /*
            * Smoothly pull selected bubble
            * toward exact center.
            */
 
           data.vx +=
-            -bubble.position.x *
-            PHYSICS.selectedAttraction *
-            deltaTime;
+            -bubble.position.x * PHYSICS.selectedAttraction * deltaTime;
 
           data.vy +=
-            -bubble.position.y *
-            PHYSICS.selectedAttraction *
-            deltaTime;
+            -bubble.position.y * PHYSICS.selectedAttraction * deltaTime;
 
           /*
            * Bring it toward camera.
            */
 
           data.vz +=
-            (PHYSICS.selectedForward -
-              bubble.position.z) *
-            5 *
-            deltaTime;
+            (PHYSICS.selectedForward - bubble.position.z) * 5 * deltaTime;
 
-          data.targetScale =
-            PHYSICS.selectedScale;
+          data.targetScale = PHYSICS.selectedScale;
 
           continue;
         }
@@ -1285,8 +1010,7 @@ export default function GlassBubbles() {
          */
 
         if (data.exploded) {
-          data.explosionLife +=
-            deltaTime;
+          data.explosionLife += deltaTime;
 
           /*
            * Continue pushing outward.
@@ -1295,81 +1019,55 @@ export default function GlassBubbles() {
            * video much better than a single impulse.
            */
 
-          const time =
-            data.explosionLife;
+          const time = data.explosionLife;
 
           /*
            * Strong initial push,
            * quickly decreasing.
            */
 
-          const pushFade =
-            Math.exp(
-              -time * 1.15,
-            );
+          const pushFade = Math.exp(-time * 1.15);
 
-          const distanceFade =
-            THREE.MathUtils.clamp(
-              1 -
-                data.explosionDistance /
-                  7,
-              0.2,
-              1,
-            );
+          const distanceFade = THREE.MathUtils.clamp(
+            1 - data.explosionDistance / 7,
+            0.2,
+            1,
+          );
 
-          const push =
-            PHYSICS.explosionStrength *
-            pushFade *
-            distanceFade;
+          const push = PHYSICS.explosionStrength * pushFade * distanceFade;
 
-          data.vx +=
-            data.explosionDirX *
-            push *
-            deltaTime;
+          data.vx += data.explosionDirX * push * deltaTime;
 
-          data.vy +=
-            data.explosionDirY *
-            push *
-            deltaTime;
+          data.vy += data.explosionDirY * push * deltaTime;
 
-          data.vz +=
-            data.explosionDirZ *
-            push *
-            deltaTime;
+          data.vz += data.explosionDirZ * push * deltaTime;
 
           /*
            * Explosion damping.
            */
 
-          const explosionDamping =
-            Math.pow(
-              PHYSICS.explosionDamping,
-              deltaTime * 60,
-            );
+          const explosionDamping = Math.pow(
+            PHYSICS.explosionDamping,
+            deltaTime * 60,
+          );
 
-          data.vx *=
-            explosionDamping;
+          data.vx *= explosionDamping;
 
-          data.vy *=
-            explosionDamping;
+          data.vy *= explosionDamping;
 
-          data.vz *=
-            explosionDamping;
+          data.vz *= explosionDamping;
 
           /*
            * Smaller during explosion.
            */
 
-          data.targetScale =
-            0.92;
+          data.targetScale = 0.92;
 
           /*
            * Slight rotation.
            */
 
-          bubble.rotation.z +=
-            0.12 *
-            deltaTime;
+          bubble.rotation.z += 0.12 * deltaTime;
 
           /*
            * Don't let normal wandering
@@ -1386,101 +1084,47 @@ export default function GlassBubbles() {
          * ------------------------------------------------
          */
 
-        if (
-          elapsed >=
-          data.wanderChangeAt
-        ) {
-          const angle =
-            (Math.random() - 0.5) *
-            PHYSICS.spreadAngle;
+        if (elapsed >= data.wanderChangeAt) {
+          const angle = (Math.random() - 0.5) * PHYSICS.spreadAngle;
 
-          const zAngle =
-            (Math.random() -
-              0.5) *
-            Math.PI;
+          const zAngle = (Math.random() - 0.5) * Math.PI;
 
-          data.wanderDirX =
-            Math.sin(angle) *
-            Math.cos(zAngle);
+          data.wanderDirX = Math.sin(angle) * Math.cos(zAngle);
 
-          data.wanderDirY =
-            Math.cos(angle) *
-            Math.cos(zAngle) -
-            0.15;
+          data.wanderDirY = Math.cos(angle) * Math.cos(zAngle) - 0.15;
 
-          data.wanderDirZ =
-            Math.sin(zAngle);
+          data.wanderDirZ = Math.sin(zAngle);
 
-          const [
-            minimumTime,
-            maximumTime,
-          ] =
-            PHYSICS.wanderChangeInterval;
+          const [minimumTime, maximumTime] = PHYSICS.wanderChangeInterval;
 
           data.wanderChangeAt =
-            elapsed +
-            minimumTime +
-            Math.random() *
-              (maximumTime -
-                minimumTime);
+            elapsed + minimumTime + Math.random() * (maximumTime - minimumTime);
         }
 
-        data.wanderX +=
-          data.wanderDirX *
-          PHYSICS.wanderStep *
-          deltaTime;
+        data.wanderX += data.wanderDirX * PHYSICS.wanderStep * deltaTime;
 
-        data.wanderY +=
-          data.wanderDirY *
-          PHYSICS.wanderStep *
-          deltaTime;
+        data.wanderY += data.wanderDirY * PHYSICS.wanderStep * deltaTime;
 
-        data.wanderZ +=
-          data.wanderDirZ *
-          PHYSICS.wanderStep *
-          deltaTime;
+        data.wanderZ += data.wanderDirZ * PHYSICS.wanderStep * deltaTime;
 
         /*
          * Floating target.
          */
 
         const targetX =
-          data.wanderX +
-          Math.cos(
-            elapsed *
-              floatSpeed *
-              0.6 +
-              phase,
-          ) *
-            0.18;
+          data.wanderX + Math.cos(elapsed * floatSpeed * 0.6 + phase) * 0.18;
 
         const targetY =
           data.wanderY +
-          Math.sin(
-            elapsed *
-              floatSpeed +
-              phase,
-          ) *
-            floatAmp *
-            0.55;
+          Math.sin(elapsed * floatSpeed + phase) * floatAmp * 0.55;
 
-        const targetZ =
-          data.wanderZ;
+        const targetZ = data.wanderZ;
 
-        let forceX =
-          (targetX -
-            bubble.position.x) *
-          PHYSICS.springStrength;
+        let forceX = (targetX - bubble.position.x) * PHYSICS.springStrength;
 
-        let forceY =
-          (targetY -
-            bubble.position.y) *
-          PHYSICS.springStrength;
+        let forceY = (targetY - bubble.position.y) * PHYSICS.springStrength;
 
-        let forceZ =
-          (targetZ -
-            bubble.position.z) *
-          PHYSICS.springStrength;
+        let forceZ = (targetZ - bubble.position.z) * PHYSICS.springStrength;
 
         /*
          * ------------------------------------------------
@@ -1488,39 +1132,22 @@ export default function GlassBubbles() {
          * ------------------------------------------------
          */
 
-        const distanceFromCenter =
-          Math.sqrt(
-            bubble.position.x *
-              bubble.position.x +
-              bubble.position.y *
-                bubble.position.y +
-              bubble.position.z *
-                bubble.position.z,
-          );
+        const distanceFromCenter = Math.sqrt(
+          bubble.position.x * bubble.position.x +
+            bubble.position.y * bubble.position.y +
+            bubble.position.z * bubble.position.z,
+        );
 
-        if (
-          distanceFromCenter >
-          PHYSICS.cohesionRadius
-        ) {
+        if (distanceFromCenter > PHYSICS.cohesionRadius) {
           const pull =
-            (distanceFromCenter -
-              PHYSICS.cohesionRadius) *
+            (distanceFromCenter - PHYSICS.cohesionRadius) *
             PHYSICS.cohesionStrength;
 
-          forceX +=
-            (-bubble.position.x /
-              distanceFromCenter) *
-            pull;
+          forceX += (-bubble.position.x / distanceFromCenter) * pull;
 
-          forceY +=
-            (-bubble.position.y /
-              distanceFromCenter) *
-            pull;
+          forceY += (-bubble.position.y / distanceFromCenter) * pull;
 
-          forceZ +=
-            (-bubble.position.z /
-              distanceFromCenter) *
-            pull;
+          forceZ += (-bubble.position.z / distanceFromCenter) * pull;
         }
 
         /*
@@ -1530,105 +1157,55 @@ export default function GlassBubbles() {
          */
 
         if (pointerActive) {
-          const dx =
-            bubble.position.x -
-            mouseWorld.x;
+          const dx = bubble.position.x - mouseWorld.x;
 
-          const dy =
-            bubble.position.y -
-            mouseWorld.y;
+          const dy = bubble.position.y - mouseWorld.y;
 
-          const distance =
-            Math.sqrt(
-              dx * dx +
-                dy * dy,
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < PHYSICS.hoverRadius) {
+            const normalized = THREE.MathUtils.clamp(
+              1 - distance / PHYSICS.hoverRadius,
+              0,
+              1,
             );
-
-          if (
-            distance <
-            PHYSICS.hoverRadius
-          ) {
-            const normalized =
-              THREE.MathUtils.clamp(
-                1 -
-                  distance /
-                    PHYSICS.hoverRadius,
-                0,
-                1,
-              );
 
             /*
              * Hover glow.
              */
 
-            if (
-              material.userData
-                .shader
-            ) {
-              material.userData
-                .shader.uniforms
-                .uHover.value =
+            if (material.userData.shader) {
+              material.userData.shader.uniforms.uHover.value =
                 THREE.MathUtils.lerp(
-                  material.userData
-                    .shader.uniforms
-                    .uHover.value,
+                  material.userData.shader.uniforms.uHover.value,
                   normalized,
                   0.15,
                 );
             }
 
-            const falloff =
-              normalized *
-              normalized;
+            const falloff = normalized * normalized;
 
             const strength =
-              (PHYSICS.hoverForce *
-                falloff) /
-              Math.sqrt(
-                Math.max(radius, 0.3),
-              );
+              (PHYSICS.hoverForce * falloff) / Math.sqrt(Math.max(radius, 0.3));
 
-            let dirX =
-              dx /
-              Math.max(
-                distance,
-                0.001,
-              );
+            let dirX = dx / Math.max(distance, 0.001);
 
-            let dirY =
-              dy /
-              Math.max(
-                distance,
-                0.001,
-              );
+            let dirY = dy / Math.max(distance, 0.001);
 
-            if (
-              distance <
-              0.05
-            ) {
-              dirX =
-                Math.random() -
-                0.5;
+            if (distance < 0.05) {
+              dirX = Math.random() - 0.5;
 
-              dirY =
-                Math.random() -
-                0.5;
+              dirY = Math.random() - 0.5;
 
-              const length =
-                Math.sqrt(
-                  dirX * dirX +
-                    dirY * dirY,
-                ) || 1;
+              const length = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
 
               dirX /= length;
               dirY /= length;
             }
 
-            forceX +=
-              dirX * strength;
+            forceX += dirX * strength;
 
-            forceY +=
-              dirY * strength;
+            forceY += dirY * strength;
           }
         }
 
@@ -1636,17 +1213,11 @@ export default function GlassBubbles() {
          * Apply forces.
          */
 
-        data.vx +=
-          forceX *
-          deltaTime;
+        data.vx += forceX * deltaTime;
 
-        data.vy +=
-          forceY *
-          deltaTime;
+        data.vy += forceY * deltaTime;
 
-        data.vz +=
-          forceZ *
-          deltaTime;
+        data.vz += forceZ * deltaTime;
 
         data.targetScale = 1;
       }
@@ -1657,22 +1228,12 @@ export default function GlassBubbles() {
        * --------------------------------------------------
        */
 
-      const damping =
-        Math.pow(
-          PHYSICS.damping,
-          deltaTime * 60,
-        );
+      const damping = Math.pow(PHYSICS.damping, deltaTime * 60);
 
-      for (
-        let i = 0;
-        i < bubbles.length;
-        i++
-      ) {
-        const bubble =
-          bubbles[i];
+      for (let i = 0; i < bubbles.length; i++) {
+        const bubble = bubbles[i];
 
-        const data =
-          bubble.userData;
+        const data = bubble.userData;
 
         /*
          * Don't damp the selected bubble
@@ -1684,11 +1245,10 @@ export default function GlassBubbles() {
 
         if (selectedIndex !== i) {
           if (data.exploded) {
-            const explosionVelocityDamping =
-              Math.pow(
-                PHYSICS.explosionVelocityDamping,
-                deltaTime * 60,
-              );
+            const explosionVelocityDamping = Math.pow(
+              PHYSICS.explosionVelocityDamping,
+              deltaTime * 60,
+            );
 
             data.vx *= explosionVelocityDamping;
             data.vy *= explosionVelocityDamping;
@@ -1700,94 +1260,60 @@ export default function GlassBubbles() {
           }
         }
 
-        const speed =
-          Math.sqrt(
-            data.vx *
-                data.vx +
-              data.vy *
-                data.vy +
-              data.vz *
-                data.vz,
-          );
+        const speed = Math.sqrt(
+          data.vx * data.vx + data.vy * data.vy + data.vz * data.vz,
+        );
 
-        const maximumSpeed =
-          data.exploded
-            ? PHYSICS.explosionMaxVelocity
-            : PHYSICS.maxVelocity;
+        const maximumSpeed = data.exploded
+          ? PHYSICS.explosionMaxVelocity
+          : PHYSICS.maxVelocity;
 
-        if (
-          speed >
-          maximumSpeed
-        ) {
-          const scale =
-            maximumSpeed /
-            speed;
+        if (speed > maximumSpeed) {
+          const scale = maximumSpeed / speed;
 
           data.vx *= scale;
           data.vy *= scale;
           data.vz *= scale;
         }
 
-        bubble.position.x +=
-          data.vx *
-          deltaTime;
+        bubble.position.x += data.vx * deltaTime;
 
-        bubble.position.y +=
-          data.vy *
-          deltaTime;
+        bubble.position.y += data.vy * deltaTime;
 
-        bubble.position.z +=
-          data.vz *
-          deltaTime;
+        bubble.position.z += data.vz * deltaTime;
 
         /*
          * Keep normal bubbles inside the visible frustum
          * so bigger radii can't push them off-screen.
          */
         if (selectedIndex !== i && !data.exploded) {
-          const fovRadians =
-            (camera.fov * Math.PI) / 180;
+          const fovRadians = (camera.fov * Math.PI) / 180;
 
-          const distanceFromCamera =
-            camera.position.z -
-            bubble.position.z;
+          const distanceFromCamera = camera.position.z - bubble.position.z;
 
           const visibleHeight =
-            2 *
-            Math.tan(fovRadians / 2) *
-            distanceFromCamera;
+            2 * Math.tan(fovRadians / 2) * distanceFromCamera;
 
-          const visibleWidth =
-            visibleHeight * camera.aspect;
+          const visibleWidth = visibleHeight * camera.aspect;
 
-          const effectiveRadius =
-            data.radius * data.baseScale;
+          const effectiveRadius = data.radius * data.baseScale;
 
-          const maxY =
-            visibleHeight / 2 -
-            effectiveRadius -
-            0.2;
+          const maxY = visibleHeight / 2 - effectiveRadius - 0.2;
 
-          const maxX =
-            visibleWidth / 2 -
-            effectiveRadius -
-            0.2;
+          const maxX = visibleWidth / 2 - effectiveRadius - 0.2;
 
-          bubble.position.y =
-            THREE.MathUtils.clamp(
-              bubble.position.y,
-              -maxY,
-              maxY,
-            );
+          bubble.position.y = THREE.MathUtils.clamp(
+            bubble.position.y,
+            -maxY,
+            maxY,
+          );
 
-          bubble.position.x =
-            THREE.MathUtils.clamp(
-              bubble.position.x,
-              -maxX,
-              maxX,
-            );
+          bubble.position.x = THREE.MathUtils.clamp(
+            bubble.position.x,
+            -maxX,
+            maxX,
+          );
         }
-
       }
 
       /*
@@ -1799,142 +1325,65 @@ export default function GlassBubbles() {
        * --------------------------------------------------
        */
 
-      if (
-        selectedIndex === null
-      ) {
+      if (selectedIndex === null) {
         /*
          * Velocity collision force.
          */
 
-        for (
-          let i = 0;
-          i < bubbles.length;
-          i++
-        ) {
-          for (
-            let j = i + 1;
-            j < bubbles.length;
-            j++
-          ) {
-            const bubbleA =
-              bubbles[i];
+        for (let i = 0; i < bubbles.length; i++) {
+          for (let j = i + 1; j < bubbles.length; j++) {
+            const bubbleA = bubbles[i];
 
-            const bubbleB =
-              bubbles[j];
+            const bubbleB = bubbles[j];
 
-            const dx =
-              bubbleB.position.x -
-              bubbleA.position.x;
+            const dx = bubbleB.position.x - bubbleA.position.x;
 
-            const dy =
-              bubbleB.position.y -
-              bubbleA.position.y;
+            const dy = bubbleB.position.y - bubbleA.position.y;
 
-            const dz =
-              bubbleB.position.z -
-              bubbleA.position.z;
+            const dz = bubbleB.position.z - bubbleA.position.z;
 
-            let distance =
-              Math.sqrt(
-                dx * dx +
-                  dy * dy +
-                  dz * dz,
-              );
+            let distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-            if (
-              distance <
-              0.0001
-            ) {
+            if (distance < 0.0001) {
               distance = 0.0001;
             }
 
             const minimumDistance =
-              (bubbleA.userData
-                .radius +
-                bubbleB.userData
-                  .radius) *
+              (bubbleA.userData.radius + bubbleB.userData.radius) *
               PHYSICS.collisionRadiusMultiplier;
 
-            if (
-              distance <
-              minimumDistance
-            ) {
-              const overlap =
-                (minimumDistance -
-                  distance) /
-                minimumDistance;
+            if (distance < minimumDistance) {
+              const overlap = (minimumDistance - distance) / minimumDistance;
 
-              const nx =
-                dx / distance;
+              const nx = dx / distance;
 
-              const ny =
-                dy / distance;
+              const ny = dy / distance;
 
-              const nz =
-                dz / distance;
+              const nz = dz / distance;
 
-              const push =
-                overlap *
-                PHYSICS.collisionStrength;
+              const push = overlap * PHYSICS.collisionStrength;
 
-              const massA =
-                bubbleA.userData
-                  .radius *
-                bubbleA.userData
-                  .radius;
+              const massA = bubbleA.userData.radius * bubbleA.userData.radius;
 
-              const massB =
-                bubbleB.userData
-                  .radius *
-                bubbleB.userData
-                  .radius;
+              const massB = bubbleB.userData.radius * bubbleB.userData.radius;
 
-              const totalMass =
-                massA + massB;
+              const totalMass = massA + massB;
 
-              const shareA =
-                massB /
-                totalMass;
+              const shareA = massB / totalMass;
 
-              const shareB =
-                massA /
-                totalMass;
+              const shareB = massA / totalMass;
 
-              bubbleA.userData.vx -=
-                nx *
-                push *
-                shareA *
-                deltaTime;
+              bubbleA.userData.vx -= nx * push * shareA * deltaTime;
 
-              bubbleA.userData.vy -=
-                ny *
-                push *
-                shareA *
-                deltaTime;
+              bubbleA.userData.vy -= ny * push * shareA * deltaTime;
 
-              bubbleA.userData.vz -=
-                nz *
-                push *
-                shareA *
-                deltaTime;
+              bubbleA.userData.vz -= nz * push * shareA * deltaTime;
 
-              bubbleB.userData.vx +=
-                nx *
-                push *
-                shareB *
-                deltaTime;
+              bubbleB.userData.vx += nx * push * shareB * deltaTime;
 
-              bubbleB.userData.vy +=
-                ny *
-                push *
-                shareB *
-                deltaTime;
+              bubbleB.userData.vy += ny * push * shareB * deltaTime;
 
-              bubbleB.userData.vz +=
-                nz *
-                push *
-                shareB *
-                deltaTime;
+              bubbleB.userData.vz += nz * push * shareB * deltaTime;
             }
           }
         }
@@ -1945,135 +1394,65 @@ export default function GlassBubbles() {
 
         for (
           let iteration = 0;
-          iteration <
-          PHYSICS.collisionSolverIterations;
+          iteration < PHYSICS.collisionSolverIterations;
           iteration++
         ) {
-          let overlapFound =
-            false;
+          let overlapFound = false;
 
-          for (
-            let i = 0;
-            i < bubbles.length;
-            i++
-          ) {
-            for (
-              let j = i + 1;
-              j < bubbles.length;
-              j++
-            ) {
-              const bubbleA =
-                bubbles[i];
+          for (let i = 0; i < bubbles.length; i++) {
+            for (let j = i + 1; j < bubbles.length; j++) {
+              const bubbleA = bubbles[i];
 
-              const bubbleB =
-                bubbles[j];
+              const bubbleB = bubbles[j];
 
-              const dx =
-                bubbleB.position.x -
-                bubbleA.position.x;
+              const dx = bubbleB.position.x - bubbleA.position.x;
 
-              const dy =
-                bubbleB.position.y -
-                bubbleA.position.y;
+              const dy = bubbleB.position.y - bubbleA.position.y;
 
-              const dz =
-                bubbleB.position.z -
-                bubbleA.position.z;
+              const dz = bubbleB.position.z - bubbleA.position.z;
 
-              let distance =
-                Math.sqrt(
-                  dx * dx +
-                    dy * dy +
-                    dz * dz,
-                );
+              let distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
               const minimumDistance =
-                (bubbleA.userData
-                  .radius +
-                  bubbleB.userData
-                    .radius) *
+                (bubbleA.userData.radius + bubbleB.userData.radius) *
                 PHYSICS.collisionRadiusMultiplier;
 
-              if (
-                distance <
-                minimumDistance
-              ) {
-                overlapFound =
-                  true;
+              if (distance < minimumDistance) {
+                overlapFound = true;
 
-                if (
-                  distance <
-                  0.0001
-                ) {
-                  distance =
-                    0.0001;
+                if (distance < 0.0001) {
+                  distance = 0.0001;
                 }
 
-                const nx =
-                  dx / distance;
+                const nx = dx / distance;
 
-                const ny =
-                  dy / distance;
+                const ny = dy / distance;
 
-                const nz =
-                  dz / distance;
+                const nz = dz / distance;
 
-                const correction =
-                  minimumDistance -
-                  distance;
+                const correction = minimumDistance - distance;
 
-                const massA =
-                  bubbleA.userData
-                    .radius *
-                  bubbleA.userData
-                    .radius;
+                const massA = bubbleA.userData.radius * bubbleA.userData.radius;
 
-                const massB =
-                  bubbleB.userData
-                    .radius *
-                  bubbleB.userData
-                    .radius;
+                const massB = bubbleB.userData.radius * bubbleB.userData.radius;
 
-                const totalMass =
-                  massA + massB;
+                const totalMass = massA + massB;
 
-                const shareA =
-                  massB /
-                  totalMass;
+                const shareA = massB / totalMass;
 
-                const shareB =
-                  massA /
-                  totalMass;
+                const shareB = massA / totalMass;
 
-                bubbleA.position.x -=
-                  nx *
-                  correction *
-                  shareA;
+                bubbleA.position.x -= nx * correction * shareA;
 
-                bubbleA.position.y -=
-                  ny *
-                  correction *
-                  shareA;
+                bubbleA.position.y -= ny * correction * shareA;
 
-                bubbleA.position.z -=
-                  nz *
-                  correction *
-                  shareA;
+                bubbleA.position.z -= nz * correction * shareA;
 
-                bubbleB.position.x +=
-                  nx *
-                  correction *
-                  shareB;
+                bubbleB.position.x += nx * correction * shareB;
 
-                bubbleB.position.y +=
-                  ny *
-                  correction *
-                  shareB;
+                bubbleB.position.y += ny * correction * shareB;
 
-                bubbleB.position.z +=
-                  nz *
-                  correction *
-                  shareB;
+                bubbleB.position.z += nz * correction * shareB;
               }
             }
           }
@@ -2090,37 +1469,24 @@ export default function GlassBubbles() {
        * --------------------------------------------------
        */
 
-      for (
-        let i = 0;
-        i < bubbles.length;
-        i++
-      ) {
-        const bubble =
-          bubbles[i];
+      for (let i = 0; i < bubbles.length; i++) {
+        const bubble = bubbles[i];
 
-        const data =
-          bubble.userData;
+        const data = bubble.userData;
 
-        data.baseScale =
-          THREE.MathUtils.lerp(
-            data.baseScale,
-            data.targetScale,
-            selectedIndex === i
-              ? PHYSICS.selectedLerp
-              : PHYSICS.explosionLerp,
-          );
-
-        bubble.scale.setScalar(
+        data.baseScale = THREE.MathUtils.lerp(
           data.baseScale,
+          data.targetScale,
+          selectedIndex === i ? PHYSICS.selectedLerp : PHYSICS.explosionLerp,
         );
+
+        bubble.scale.setScalar(data.baseScale);
 
         /*
          * Face camera.
          */
 
-        bubble.quaternion.copy(
-          camera.quaternion,
-        );
+        bubble.quaternion.copy(camera.quaternion);
       }
 
       /*
@@ -2129,26 +1495,13 @@ export default function GlassBubbles() {
        * --------------------------------------------------
        */
 
-      camera.position.x +=
-        (mouse.x * 1.8 -
-          camera.position.x) *
-        0.045;
+      camera.position.x += (mouse.x * 1.8 - camera.position.x) * 0.045;
 
-      camera.position.y +=
-        (-mouse.y * 1.3 -
-          camera.position.y) *
-        0.045;
+      camera.position.y += (-mouse.y * 1.3 - camera.position.y) * 0.045;
 
-      camera.lookAt(
-        0,
-        0,
-        0,
-      );
+      camera.lookAt(0, 0, 0);
 
-      renderer.render(
-        scene,
-        camera,
-      );
+      renderer.render(scene, camera);
     }
 
     animate();
@@ -2160,30 +1513,21 @@ export default function GlassBubbles() {
      */
 
     function handleResize() {
-      width =
-        mount.clientWidth;
+      width = mount.clientWidth;
 
-      height =
-        mount.clientHeight;
+      height = mount.clientHeight;
 
-      camera.aspect =
-        width / height;
+      camera.aspect = width / height;
 
       camera.updateProjectionMatrix();
 
-      renderer.setSize(
-        width,
-        height,
-      );
+      renderer.setSize(width, height);
 
       // Recompute and apply the device-based bubble size.
       applyDeviceScale(getDeviceBubbleScale(width));
     }
 
-    window.addEventListener(
-      "resize",
-      handleResize,
-    );
+    window.addEventListener("resize", handleResize);
 
     /*
      * --------------------------------------------------
@@ -2192,125 +1536,77 @@ export default function GlassBubbles() {
      */
 
     return () => {
-      cancelAnimationFrame(
-        frameId,
-      );
+      cancelAnimationFrame(frameId);
 
       if (navigateTimer) {
-        clearTimeout(
-          navigateTimer,
-        );
+        clearTimeout(navigateTimer);
       }
 
-      window.removeEventListener(
-        "resize",
-        handleResize,
-      );
+      window.removeEventListener("resize", handleResize);
 
-      window.removeEventListener(
-        "pointerup",
-        pointerUpHandler,
-      );
+      window.removeEventListener("pointerup", pointerUpHandler);
 
-      window.removeEventListener(
-        "pointercancel",
-        pointerUpHandler,
-      );
+      window.removeEventListener("pointercancel", pointerUpHandler);
 
-      mount.removeEventListener(
-        "pointermove",
-        pointerMove,
-      );
+      mount.removeEventListener("pointermove", pointerMove);
 
-      mount.removeEventListener(
-        "pointerenter",
-        pointerEnter,
-      );
+      mount.removeEventListener("pointerenter", pointerEnter);
 
-      mount.removeEventListener(
-        "pointerleave",
-        pointerLeave,
-      );
+      mount.removeEventListener("pointerleave", pointerLeave);
 
-      mount.removeEventListener(
-        "pointerdown",
-        pointerDownHandler,
-      );
+      mount.removeEventListener("pointerdown", pointerDownHandler);
 
       /*
        * Dispose everything.
        */
 
-      bubbles.forEach(
-        (bubble) => {
-          bubble.traverse(
-            (child) => {
-              if (!child.isMesh) {
-                return;
+      bubbles.forEach((bubble) => {
+        bubble.traverse((child) => {
+          if (!child.isMesh) {
+            return;
+          }
+
+          if (child.geometry) {
+            child.geometry.dispose();
+          }
+
+          if (child.material) {
+            const materials = Array.isArray(child.material)
+              ? child.material
+              : [child.material];
+
+            materials.forEach((material) => {
+              if (material.map) {
+                material.map.dispose();
               }
 
-              if (child.geometry) {
-                child.geometry.dispose();
-              }
+              material.dispose();
+            });
+          }
+        });
 
-              if (child.material) {
-                const materials =
-                  Array.isArray(
-                    child.material,
-                  )
-                    ? child.material
-                    : [child.material];
-
-                materials.forEach(
-                  (material) => {
-                    if (
-                      material.map
-                    ) {
-                      material.map.dispose();
-                    }
-
-                    material.dispose();
-                  },
-                );
-              }
-            },
-          );
-
-          scene.remove(
-            bubble,
-          );
-        },
-      );
+        scene.remove(bubble);
+      });
 
       renderer.dispose();
 
-      if (
-        mount.contains(
-          renderer.domElement,
-        )
-      ) {
-        mount.removeChild(
-          renderer.domElement,
-        );
+      if (mount.contains(renderer.domElement)) {
+        mount.removeChild(renderer.domElement);
       }
     };
   }, [router]);
 
-  return (
-    <div
-      ref={mountRef}
-      style={{
-        width: "100%",
-        height: "100vh",
-
-        overflow: "hidden",
-
-        cursor: "grab",
-
-        touchAction: "none",
-
-        userSelect: "none",
-      }}
-    />
-  );
+ return (
+  <div
+    ref={mountRef}
+    className="bubble-canvas-mount"
+    style={{
+      width: "100%",
+      overflow: "hidden",
+      cursor: "grab",
+      touchAction: "none",
+      userSelect: "none",
+    }}
+  />
+);
 }
