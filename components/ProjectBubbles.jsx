@@ -17,26 +17,45 @@ const PROJECTS = [
     slug: "3d-tailor-space",
     title: "3D Tailor Space",
   },
-  { image: "/projects/cartlane.png", slug: "cartlane", title: "Cartlane" },
+  {
+    image: "/projects/cartlane.png",
+    slug: "cartlane",
+    title: "Cartlane",
+  },
   {
     image: "/projects/sandtglobal.jpg",
     slug: "sandtglobal",
     title: "SandTGlobal",
   },
-  { image: "/projects/collins.jpg", slug: "collins", title: "Collins" },
-  { image: "/projects/dentalbay.jpg", slug: "dentalbay", title: "DentalBay" },
-  { image: "/projects/amal.jpg", slug: "amal-al-sham", title: "Amal Al-Sham" },
-  { image: "/projects/epyrocxx.jpg", slug: "epyrocxx", title: "Epyrocxx" },
+  {
+    image: "/projects/collins.jpg",
+    slug: "collins",
+    title: "Collins",
+  },
+  {
+    image: "/projects/dentalbay.jpg",
+    slug: "dentalbay",
+    title: "DentalBay",
+  },
+  {
+    image: "/projects/amal.jpg",
+    slug: "amal-al-sham",
+    title: "Amal Al-Sham",
+  },
+  {
+    image: "/projects/epyrocxx.jpg",
+    slug: "epyrocxx",
+    title: "Epyrocxx",
+  },
 ];
 
 const PHYSICS = {
   bubbleCount: 20,
 
-  // How wide the cluster/wander fans out, in radians.
-  // Math.PI * 2 = full 360° circle, Math.PI = 180° (half), Math.PI / 2 = 90°.
+  // Initial cluster
   spreadAngle: Math.PI,
 
-  // Normal floating motion
+  // Normal floating
   springStrength: 2.4,
   damping: 0.9,
   maxVelocity: 6,
@@ -44,11 +63,11 @@ const PHYSICS = {
   wanderStep: 0.28,
   wanderChangeInterval: [2.2, 4.5],
 
-  // Mouse interaction
+  // Mouse
   hoverRadius: 20.2,
   hoverForce: 90,
 
-  // Bubble collision
+  // Collision
   collisionStrength: 10,
   collisionRadiusMultiplier: 0.94,
   collisionSolverIterations: 3,
@@ -57,63 +76,64 @@ const PHYSICS = {
   cohesionStrength: 3.8,
   cohesionRadius: 2.1,
 
-  // CLICK EXPLOSION
-  explosionRadius: 5.8,
-  explosionStrength: 30,
-  explosionOutwardVelocity: 11,
-  explosionMaxVelocity: 42,
-  explosionVelocityDamping: 0.998,
+  // ------------------------------------------------
+  // EXPLOSION
+  // ------------------------------------------------
+
+  // How far from selected bubble the explosion affects
+  explosionRadius: 7.5,
+
+  // Strong continuous force
+  explosionStrength: 38,
+
+  // Immediate velocity
+  explosionOutwardVelocity: 15,
+
+  // Maximum explosion velocity
+  explosionMaxVelocity: 55,
+
+  // How long the strong push remains
+  explosionPushDuration: 0.75,
+
+  // Velocity damping
+  explosionVelocityDamping: 0.985,
+
+  // Random organic variation
+  explosionRandomness: 1.2,
+
+  // Allow bubbles to travel beyond viewport
+  explosionOverflow: 1.8,
 
   // Selected bubble
-  selectedScale: 1.7,
-  selectedForward: 4.0,
-  selectedCenterStrength: 11,
-  selectedAttraction: 8,
+  selectedScale: 1.75,
+  selectedForward: 4.5,
+  selectedCenterStrength: 12,
+  selectedAttraction: 9,
 
   // Animation
-  explosionDamping: 0.965,
   selectedLerp: 0.1,
-  explosionLerp: 0.075,
+  explosionLerp: 0.08,
 
   navigateDelay: 850,
 
   maxDeltaTime: 1 / 30,
 };
 
-/*
- * --------------------------------------------------
- * RESPONSIVE BUBBLE SIZE
- *
- * Returns a multiplier applied on top of each
- * bubble's individually-randomized base radius.
- * Tune the breakpoints/values to taste.
- * --------------------------------------------------
- */
 function getDeviceBubbleScale(width) {
-  if (width < 400) return 1.05; // very small phones
-  if (width < 640) return 1.05; // phones
-  if (width < 768) return 0.72; // large phones / small tablets
-  if (width < 1024) return 0.85; // tablets
-  if (width < 1440) return 1.0; // laptops / desktops
-  return 1.12; // large / wide desktop screens
+  if (width < 400) return 1.05;
+  if (width < 640) return 1.05;
+  if (width < 768) return 0.72;
+  if (width < 1024) return 0.85;
+  if (width < 1440) return 1;
+  return 1.12;
 }
 
-/*
- * --------------------------------------------------
- * RESPONSIVE EXPLOSION FORCE
- *
- * Small screens have a much smaller visible frustum,
- * so the same explosion force that looks good on
- * desktop will fling bubbles off-canvas on mobile.
- * This scales the outward force down on small screens.
- * --------------------------------------------------
- */
 function getDeviceExplosionScale(width) {
-  if (width < 400) return 0.35;
-  if (width < 640) return 0.45;
-  if (width < 768) return 0.6;
-  if (width < 1024) return 0.8;
-  return 1.0;
+  if (width < 400) return 0.28;
+  if (width < 640) return 0.38;
+  if (width < 768) return 0.62;
+  if (width < 1024) return 0.82;
+  return 1;
 }
 
 function createHighlightMesh(size) {
@@ -167,14 +187,16 @@ function domeSurfacePoint(
   const bulgeHeight = radius * bulgeRatio;
 
   const sphereRadius =
-    (radius * radius + bulgeHeight * bulgeHeight) / (2 * bulgeHeight);
+    (radius * radius + bulgeHeight * bulgeHeight) /
+    (2 * bulgeHeight);
 
   const radialDistance = normalizedRadius * radius;
 
   const z =
     Math.sqrt(
       Math.max(
-        sphereRadius * sphereRadius - radialDistance * radialDistance,
+        sphereRadius * sphereRadius -
+          radialDistance * radialDistance,
         0,
       ),
     ) -
@@ -227,15 +249,18 @@ export default function GlassBubbles() {
     let width = mount.clientWidth;
     let height = mount.clientHeight;
 
-    // Current device-based multiplier applied to bubble radii.
     let deviceScale = getDeviceBubbleScale(width);
 
-    // Current device-based multiplier applied to explosion force.
     let explosionScale = getDeviceExplosionScale(width);
 
     const scene = new THREE.Scene();
 
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      width / height,
+      0.1,
+      100,
+    );
 
     camera.position.set(0, 0, 15);
 
@@ -246,52 +271,63 @@ export default function GlassBubbles() {
 
     renderer.setSize(width, height);
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, 2),
+    );
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     mount.appendChild(renderer.domElement);
 
-    /*
-     * --------------------------------------------------
-     * LIGHTING
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // LIGHTING
+    // ------------------------------------------------
 
-    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x17051f, 1.4);
+    const hemisphereLight = new THREE.HemisphereLight(
+      0xffffff,
+      0x17051f,
+      1.4,
+    );
 
     scene.add(hemisphereLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.7);
+    const keyLight = new THREE.DirectionalLight(
+      0xffffff,
+      1.7,
+    );
 
     keyLight.position.set(6, 9, 10);
 
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0x9fc0ff, 1.0);
+    const rimLight = new THREE.DirectionalLight(
+      0x9fc0ff,
+      1.0,
+    );
 
     rimLight.position.set(-8, -3, -5);
 
     scene.add(rimLight);
 
-    const fillLight = new THREE.PointLight(0xffffff, 1.0, 60);
+    const fillLight = new THREE.PointLight(
+      0xffffff,
+      1.0,
+      60,
+    );
 
     fillLight.position.set(-3, 3, 9);
 
     scene.add(fillLight);
 
-    /*
-     * --------------------------------------------------
-     * BUBBLES
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // BUBBLES
+    // ------------------------------------------------
 
     const textureLoader = new THREE.TextureLoader();
 
     textureLoader.crossOrigin = "anonymous";
 
     const bubbles = [];
-
     const domeMeshes = [];
 
     const count = PHYSICS.bubbleCount;
@@ -301,18 +337,15 @@ export default function GlassBubbles() {
     for (let i = 0; i < count; i++) {
       const project = PROJECTS[i % PROJECTS.length];
 
-      // Base random radius, before device scaling is applied.
       const baseRadius = 1.35 + Math.random() * 0.4;
 
-      // Actual radius used for this bubble's geometry/physics,
-      // scaled for the current device/viewport size.
       const radius = baseRadius * deviceScale;
 
       const group = new THREE.Group();
 
-      /*
-       * Glass material
-       */
+      // ------------------------------------------------
+      // GLASS MATERIAL
+      // ------------------------------------------------
 
       const material = new THREE.MeshPhysicalMaterial({
         roughness: 0.28,
@@ -326,9 +359,9 @@ export default function GlassBubbles() {
         opacity: 0.98,
       });
 
-      /*
-       * Shader enhancement
-       */
+      // ------------------------------------------------
+      // SHADER
+      // ------------------------------------------------
 
       material.onBeforeCompile = (shader) => {
         shader.uniforms.uTime = {
@@ -339,8 +372,7 @@ export default function GlassBubbles() {
           value: 0,
         };
 
-        shader.vertexShader =
-          `
+        shader.vertexShader = `
           varying vec3 vWorldPosition;
           varying vec3 vNormalWorld;
           varying vec2 vBubbleUv;
@@ -350,9 +382,10 @@ export default function GlassBubbles() {
 
         ` + shader.vertexShader;
 
-        shader.vertexShader = shader.vertexShader.replace(
-          "#include <begin_vertex>",
-          `
+        shader.vertexShader =
+          shader.vertexShader.replace(
+            "#include <begin_vertex>",
+            `
               #include <begin_vertex>
 
               vBubbleUv = uv;
@@ -369,10 +402,9 @@ export default function GlassBubbles() {
                   transformedNormal
                 );
             `,
-        );
+          );
 
-        shader.fragmentShader =
-          `
+        shader.fragmentShader = `
           varying vec3 vWorldPosition;
           varying vec3 vNormalWorld;
           varying vec2 vBubbleUv;
@@ -382,9 +414,10 @@ export default function GlassBubbles() {
 
         ` + shader.fragmentShader;
 
-        shader.fragmentShader = shader.fragmentShader.replace(
-          "#include <dithering_fragment>",
-          `
+        shader.fragmentShader =
+          shader.fragmentShader.replace(
+            "#include <dithering_fragment>",
+            `
               #include <dithering_fragment>
 
               float fresnel =
@@ -420,25 +453,29 @@ export default function GlassBubbles() {
                 glassGlow *
                 glowStrength;
             `,
-        );
+          );
 
         material.userData.shader = shader;
       };
 
-      /*
-       * Texture
-       */
+      // ------------------------------------------------
+      // TEXTURE
+      // ------------------------------------------------
 
       let texture = textureLoader.load(
         project.image,
+
         (loadedTexture) => {
-          loadedTexture.colorSpace = THREE.SRGBColorSpace;
+          loadedTexture.colorSpace =
+            THREE.SRGBColorSpace;
 
           material.map = loadedTexture;
 
           material.needsUpdate = true;
         },
+
         undefined,
+
         () => {
           texture = createFallbackTexture();
 
@@ -452,13 +489,20 @@ export default function GlassBubbles() {
 
       material.map = texture;
 
-      /*
-       * Sphere
-       */
+      // ------------------------------------------------
+      // SPHERE
+      // ------------------------------------------------
 
-      const geometry = new THREE.SphereGeometry(radius, 48, 48);
+      const geometry = new THREE.SphereGeometry(
+        radius,
+        48,
+        48,
+      );
 
-      const dome = new THREE.Mesh(geometry, material);
+      const dome = new THREE.Mesh(
+        geometry,
+        material,
+      );
 
       dome.userData.bubbleIndex = i;
 
@@ -466,59 +510,84 @@ export default function GlassBubbles() {
 
       domeMeshes.push(dome);
 
-      /*
-       * Glass highlights
-       */
+      // ------------------------------------------------
+      // HIGHLIGHTS
+      // ------------------------------------------------
 
-      const dotCount = 2 + Math.floor(Math.random() * 2);
+      const dotCount =
+        2 + Math.floor(Math.random() * 2);
 
-      for (let dotIndex = 0; dotIndex < dotCount; dotIndex++) {
+      for (
+        let dotIndex = 0;
+        dotIndex < dotCount;
+        dotIndex++
+      ) {
         const normalizedRadius =
-          dotIndex === 0 ? 0.32 : 0.5 + Math.random() * 0.25;
+          dotIndex === 0
+            ? 0.32
+            : 0.5 + Math.random() * 0.25;
 
-        const theta = dotIndex === 0 ? 2.35 : 2.1 + (Math.random() - 0.5) * 0.9;
+        const theta =
+          dotIndex === 0
+            ? 2.35
+            : 2.1 +
+              (Math.random() - 0.5) * 0.9;
 
-        const [highlightX, highlightY, highlightZ] = domeSurfacePoint(
+        const [
+          highlightX,
+          highlightY,
+          highlightZ,
+        ] = domeSurfacePoint(
           radius,
           bulge,
           normalizedRadius,
           theta,
         );
 
-        const dotSize = (dotIndex === 0 ? 0.16 : 0.07) * radius;
+        const dotSize =
+          (dotIndex === 0 ? 0.16 : 0.07) *
+          radius;
 
-        const highlight = createHighlightMesh(dotSize);
+        const highlight =
+          createHighlightMesh(dotSize);
 
-        highlight.position.set(highlightX, highlightY, highlightZ);
+        highlight.position.set(
+          highlightX,
+          highlightY,
+          highlightZ,
+        );
 
         group.add(highlight);
       }
 
-      /*
-       * ------------------------------------------------
-       * INITIAL CLUSTER
-       *
-       * Important:
-       * Keep the initial cluster tight like the video.
-       * ------------------------------------------------
-       */
+      // ------------------------------------------------
+      // INITIAL CLUSTER
+      // ------------------------------------------------
 
-      const angle = (Math.random() - 0.5) * PHYSICS.spreadAngle;
+      const angle =
+        (Math.random() - 0.5) *
+        PHYSICS.spreadAngle;
 
-      const distance = Math.pow(Math.random(), 1.7) * 2.0;
+      const distance =
+        Math.pow(Math.random(), 1.7) * 2.0;
 
-      // sin -> full left/right width, cos -> upper 180° dome only
-      const x = Math.sin(angle) * distance;
+      const x =
+        Math.sin(angle) * distance;
 
-      const y = Math.cos(angle) * distance * 0.78 - 0.1;
+      const y =
+        Math.cos(angle) *
+          distance *
+          0.78 -
+        0.1;
 
-      const z = (Math.random() - 0.5) * 2.0;
+      const z =
+        (Math.random() - 0.5) * 2.0;
 
       group.position.set(x, y, z);
 
-      /*
-       * Physics state
-       */
+      // ------------------------------------------------
+      // PHYSICS STATE
+      // ------------------------------------------------
 
       group.userData = {
         material,
@@ -533,19 +602,26 @@ export default function GlassBubbles() {
         wanderDirY: 0,
         wanderDirZ: 0,
 
-        floatSpeed: 1.95 + Math.random() * 1.95,
+        floatSpeed:
+          1.95 +
+          Math.random() * 1.95,
 
-        floatAmp: 0.25 + Math.random() * 0.35,
+        floatAmp:
+          0.25 +
+          Math.random() * 0.35,
 
-        phase: Math.random() * Math.PI * 2,
+        phase:
+          Math.random() *
+          Math.PI *
+          2,
 
-        drift: Math.random() * Math.PI * 2,
+        drift:
+          Math.random() *
+          Math.PI *
+          2,
 
         texture,
 
-        // Store both the un-scaled base radius (so we can
-        // rebuild geometry cleanly on a device-scale change)
-        // and the current, device-scaled radius used by physics.
         baseRadius,
         radius,
 
@@ -564,15 +640,17 @@ export default function GlassBubbles() {
 
         explosionLife: 0,
 
-        /*
-         * Direction assigned when clicked.
-         */
-
+        // Explosion direction
         explosionDirX: 0,
         explosionDirY: 0,
         explosionDirZ: 0,
 
         explosionDistance: 0,
+
+        // Random explosion variation
+        explosionRandomX: 0,
+        explosionRandomY: 0,
+        explosionRandomZ: 0,
       };
 
       scene.add(group);
@@ -580,19 +658,15 @@ export default function GlassBubbles() {
       bubbles.push(group);
     }
 
-    /*
-     * --------------------------------------------------
-     * RESPONSIVE RESIZE HELPER
-     *
-     * Rebuilds each bubble's sphere geometry (and
-     * repositions its glass highlights) at the new
-     * device-scaled radius, without disturbing the
-     * physics/position state.
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // RESPONSIVE SCALE
+    // ------------------------------------------------
 
     function applyDeviceScale(nextScale) {
-      if (Math.abs(nextScale - deviceScale) < 0.001) {
+      if (
+        Math.abs(nextScale - deviceScale) <
+        0.001
+      ) {
         return;
       }
 
@@ -601,7 +675,9 @@ export default function GlassBubbles() {
       bubbles.forEach((bubble) => {
         const data = bubble.userData;
 
-        const newRadius = data.baseRadius * deviceScale;
+        const newRadius =
+          data.baseRadius *
+          deviceScale;
 
         data.radius = newRadius;
 
@@ -610,20 +686,26 @@ export default function GlassBubbles() {
             return;
           }
 
-          // The main glass sphere: rebuild geometry at new radius.
-          if (child.geometry?.type === "SphereGeometry") {
+          if (
+            child.geometry?.type ===
+            "SphereGeometry"
+          ) {
             child.geometry.dispose();
-            child.geometry = new THREE.SphereGeometry(newRadius, 48, 48);
+
+            child.geometry =
+              new THREE.SphereGeometry(
+                newRadius,
+                48,
+                48,
+              );
           }
         });
       });
     }
 
-    /*
-     * --------------------------------------------------
-     * POINTER
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // POINTER
+    // ------------------------------------------------
 
     mount.style.touchAction = "none";
 
@@ -632,19 +714,28 @@ export default function GlassBubbles() {
       y: 0,
     };
 
-    const ndc = new THREE.Vector2(9999, 9999);
+    const ndc = new THREE.Vector2(
+      9999,
+      9999,
+    );
 
-    const raycaster = new THREE.Raycaster();
+    const raycaster =
+      new THREE.Raycaster();
 
-    /*
-     * Plane used for mouse physics.
-     */
+    const groundPlane = new THREE.Plane(
+      new THREE.Vector3(0, 0, 1),
+      0,
+    );
 
-    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const mouseWorld =
+      new THREE.Vector3(
+        9999,
+        9999,
+        0,
+      );
 
-    const mouseWorld = new THREE.Vector3(9999, 9999, 0);
-
-    const planeHit = new THREE.Vector3();
+    const planeHit =
+      new THREE.Vector3();
 
     let pointerActive = false;
 
@@ -654,22 +745,39 @@ export default function GlassBubbles() {
 
     let navigateTimer = null;
 
-    /*
-     * --------------------------------------------------
-     * POINTER HELPERS
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // POINTER HELPERS
+    // ------------------------------------------------
 
     function updatePointer(event) {
-      const rect = mount.getBoundingClientRect();
+      const rect =
+        mount.getBoundingClientRect();
 
-      mouse.x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+      mouse.x =
+        ((event.clientX - rect.left) /
+          rect.width -
+          0.5) *
+        2;
 
-      mouse.y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+      mouse.y =
+        ((event.clientY - rect.top) /
+          rect.height -
+          0.5) *
+        2;
 
-      ndc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      ndc.x =
+        ((event.clientX - rect.left) /
+          rect.width) *
+          2 -
+        1;
 
-      ndc.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+      ndc.y =
+        -(
+          ((event.clientY - rect.top) /
+            rect.height) *
+            2 -
+          1
+        );
     }
 
     function pointerMove(event) {
@@ -687,42 +795,48 @@ export default function GlassBubbles() {
     function pointerLeave() {
       pointerActive = false;
 
-      mouseWorld.set(9999, 9999, 0);
+      mouseWorld.set(
+        9999,
+        9999,
+        0,
+      );
     }
 
-    /*
-     * --------------------------------------------------
-     * POINTER DOWN
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // POINTER DOWN
+    // ------------------------------------------------
 
     function pointerDownHandler(event) {
       updatePointer(event);
 
       pointerActive = true;
 
-      raycaster.setFromCamera(ndc, camera);
+      raycaster.setFromCamera(
+        ndc,
+        camera,
+      );
 
-      const hits = raycaster.intersectObjects(domeMeshes, false);
+      const hits =
+        raycaster.intersectObjects(
+          domeMeshes,
+          false,
+        );
 
       pointerDown = {
         x: event.clientX,
         y: event.clientY,
 
-        index: hits.length > 0 ? hits[0].object.userData.bubbleIndex : null,
+        index:
+          hits.length > 0
+            ? hits[0].object.userData
+                .bubbleIndex
+            : null,
       };
     }
 
-    /*
-     * --------------------------------------------------
-     * EXPLOSION
-     *
-     * This is the important part.
-     *
-     * Every other bubble gets a radial direction
-     * away from the selected bubble.
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // EXPLOSION
+    // ------------------------------------------------
 
     function explodeBubble(selected) {
       if (selectedIndex !== null) {
@@ -731,49 +845,59 @@ export default function GlassBubbles() {
 
       selectedIndex = selected;
 
-      const selectedBubble = bubbles[selected];
+      const selectedBubble =
+        bubbles[selected];
 
-      const selectedPosition = selectedBubble.position.clone();
+      const selectedPosition =
+        selectedBubble.position.clone();
 
-      /*
-       * Selected bubble:
-       *
-       * - becomes bigger
-       * - moves to center
-       * - moves slightly toward camera
-       */
+      // ------------------------------------------------
+      // SELECTED BUBBLE
+      // ------------------------------------------------
 
-      selectedBubble.userData.targetScale = PHYSICS.selectedScale;
+      selectedBubble.userData.targetScale =
+        PHYSICS.selectedScale;
 
       selectedBubble.userData.vx +=
-        -selectedBubble.position.x * PHYSICS.selectedCenterStrength;
+        -selectedBubble.position.x *
+        PHYSICS.selectedCenterStrength;
 
       selectedBubble.userData.vy +=
-        -selectedBubble.position.y * PHYSICS.selectedCenterStrength;
+        -selectedBubble.position.y *
+        PHYSICS.selectedCenterStrength;
 
-      selectedBubble.userData.vz += PHYSICS.selectedForward;
+      selectedBubble.userData.vz +=
+        PHYSICS.selectedForward;
 
-      /*
-       * Push every other bubble away.
-       */
+      // ------------------------------------------------
+      // EXPLODE ALL OTHER BUBBLES
+      // ------------------------------------------------
 
-      for (let i = 0; i < bubbles.length; i++) {
+      for (
+        let i = 0;
+        i < bubbles.length;
+        i++
+      ) {
         if (i === selected) {
           continue;
         }
 
         const bubble = bubbles[i];
 
-        const data = bubble.userData;
+        const data =
+          bubble.userData;
 
-        const direction = bubble.position.clone().sub(selectedPosition);
+        const direction =
+          bubble.position
+            .clone()
+            .sub(selectedPosition);
 
-        let distance = direction.length();
+        let distance =
+          direction.length();
 
-        /*
-         * Prevent zero-length direction.
-         */
-
+        // If two bubbles are almost exactly
+        // on top of each other, create
+        // a random direction.
         if (distance < 0.001) {
           direction.set(
             Math.random() - 0.5,
@@ -781,194 +905,283 @@ export default function GlassBubbles() {
             Math.random() - 0.5,
           );
 
-          distance = direction.length();
+          distance =
+            direction.length();
         }
 
         direction.normalize();
 
-        /*
-         * Close bubbles receive much
-         * stronger force.
-         */
+        // ------------------------------------------------
+        // Distance based explosion
+        // ------------------------------------------------
 
-        const proximity = THREE.MathUtils.clamp(
-          1 - distance / PHYSICS.explosionRadius,
-          0,
-          1,
-        );
+        const normalizedDistance =
+          THREE.MathUtils.clamp(
+            distance /
+              PHYSICS.explosionRadius,
+            0,
+            1,
+          );
 
-        /*
-         * Strong near center,
-         * softer farther away.
-         */
+        const proximity =
+          1 -
+          normalizedDistance;
 
-        const falloff = 0.35 + proximity * proximity * 2.2;
+        // Very strong near selected bubble
+        const falloff =
+          0.45 +
+          proximity *
+            proximity *
+            2.8;
 
-        const strength = PHYSICS.explosionStrength * falloff;
+        const strength =
+          PHYSICS.explosionStrength *
+          falloff *
+          explosionScale;
 
-        /*
-         * Store the direction so the
-         * explosion continues visually.
-         */
+        // ------------------------------------------------
+        // STORE EXPLOSION DATA
+        // ------------------------------------------------
 
-        data.explosionDirX = direction.x;
+        data.explosionDirX =
+          direction.x;
 
-        data.explosionDirY = direction.y;
+        data.explosionDirY =
+          direction.y;
 
-        data.explosionDirZ = direction.z;
+        data.explosionDirZ =
+          direction.z;
 
-        data.explosionDistance = distance;
+        data.explosionDistance =
+          distance;
 
         data.exploded = true;
 
         data.explosionLife = 0;
 
-        /*
-         * Initial velocity.
-         * Scaled by explosionScale so small screens
-         * don't fling bubbles off-canvas.
-         */
+        // Random organic movement
+        data.explosionRandomX =
+          (Math.random() - 0.5) *
+          PHYSICS.explosionRandomness;
+
+        data.explosionRandomY =
+          (Math.random() - 0.5) *
+          PHYSICS.explosionRandomness;
+
+        data.explosionRandomZ =
+          (Math.random() - 0.5) *
+          PHYSICS.explosionRandomness;
+
+        // ------------------------------------------------
+        // BIG INITIAL JUMP
+        // ------------------------------------------------
+
+        const initialVelocity =
+          PHYSICS.explosionOutwardVelocity *
+          falloff *
+          explosionScale;
 
         data.vx +=
           direction.x *
-          PHYSICS.explosionOutwardVelocity *
-          falloff *
-          explosionScale;
+          initialVelocity;
 
         data.vy +=
           direction.y *
-          PHYSICS.explosionOutwardVelocity *
-          falloff *
-          explosionScale;
+          initialVelocity;
 
         data.vz +=
           direction.z *
-          PHYSICS.explosionOutwardVelocity *
-          falloff *
+          initialVelocity;
+
+        // Extra force
+        data.vx +=
+          direction.x *
+          strength *
+          0.22;
+
+        data.vy +=
+          direction.y *
+          strength *
+          0.22;
+
+        data.vz +=
+          direction.z *
+          strength *
+          0.22;
+
+        // Random variation
+        data.vx +=
+          data.explosionRandomX;
+
+        data.vy +=
+          data.explosionRandomY;
+
+        data.vz +=
+          data.explosionRandomZ;
+
+        // Slight upward kick makes the
+        // explosion look more natural.
+        data.vy +=
+          (0.25 +
+            Math.random() * 0.35) *
           explosionScale;
-
-        /*
-         * Small random variation makes the
-         * explosion organic instead of perfect.
-         */
-
-        data.vx += (Math.random() - 0.5) * 0.7 * explosionScale;
-
-        data.vy += (Math.random() - 0.5) * 0.7 * explosionScale;
-
-        data.vz += (Math.random() - 0.5) * 0.4 * explosionScale;
-
-        /*
-         * Extra immediate push.
-         */
-
-        data.vx += direction.x * strength * 0.18 * explosionScale;
-
-        data.vy += direction.y * strength * 0.18 * explosionScale;
-
-        data.vz += direction.z * strength * 0.18 * explosionScale;
       }
 
-      /*
-       * Navigate after the animation.
-       */
+      // ------------------------------------------------
+      // NAVIGATE
+      // ------------------------------------------------
 
       if (navigateTimer) {
-        clearTimeout(navigateTimer);
+        clearTimeout(
+          navigateTimer,
+        );
       }
 
       navigateTimer = setTimeout(() => {
-        const project = selectedBubble.userData.project;
+        const project =
+          selectedBubble.userData
+            .project;
 
-        if (project && project.slug) {
-          router.push(`/projects/${project.slug}`);
+        if (
+          project &&
+          project.slug
+        ) {
+          router.push(
+            `/projects/${project.slug}`,
+          );
         }
       }, PHYSICS.navigateDelay);
     }
 
-    /*
-     * --------------------------------------------------
-     * POINTER UP
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // POINTER UP
+    // ------------------------------------------------
 
     function pointerUpHandler(event) {
       const down = pointerDown;
 
       pointerDown = null;
 
-      if (!down || down.index === null) {
+      if (
+        !down ||
+        down.index === null
+      ) {
         return;
       }
 
-      const deltaX = event.clientX - down.x;
+      const deltaX =
+        event.clientX -
+        down.x;
 
-      const deltaY = event.clientY - down.y;
+      const deltaY =
+        event.clientY -
+        down.y;
 
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const distance =
+        Math.sqrt(
+          deltaX * deltaX +
+            deltaY * deltaY,
+        );
 
-      /*
-       * Small movement = click/tap.
-       */
-
+      // Click/tap
       if (distance < 14) {
-        explodeBubble(down.index);
+        explodeBubble(
+          down.index,
+        );
       }
     }
 
-    mount.addEventListener("pointermove", pointerMove);
+    mount.addEventListener(
+      "pointermove",
+      pointerMove,
+    );
 
-    mount.addEventListener("pointerenter", pointerEnter);
+    mount.addEventListener(
+      "pointerenter",
+      pointerEnter,
+    );
 
-    mount.addEventListener("pointerleave", pointerLeave);
+    mount.addEventListener(
+      "pointerleave",
+      pointerLeave,
+    );
 
-    mount.addEventListener("pointerdown", pointerDownHandler);
+    mount.addEventListener(
+      "pointerdown",
+      pointerDownHandler,
+    );
 
-    window.addEventListener("pointerup", pointerUpHandler);
+    window.addEventListener(
+      "pointerup",
+      pointerUpHandler,
+    );
 
-    window.addEventListener("pointercancel", pointerUpHandler);
+    window.addEventListener(
+      "pointercancel",
+      pointerUpHandler,
+    );
 
-    /*
-     * --------------------------------------------------
-     * ANIMATION
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // ANIMATION
+    // ------------------------------------------------
 
-    const clock = new THREE.Clock();
+    const clock =
+      new THREE.Clock();
 
     let frameId = 0;
 
     function animate() {
-      frameId = requestAnimationFrame(animate);
+      frameId =
+        requestAnimationFrame(
+          animate,
+        );
 
-      const deltaTime = Math.min(clock.getDelta(), PHYSICS.maxDeltaTime);
+      const deltaTime =
+        Math.min(
+          clock.getDelta(),
+          PHYSICS.maxDeltaTime,
+        );
 
-      const elapsed = clock.elapsedTime;
+      const elapsed =
+        clock.elapsedTime;
 
-      /*
-       * Update mouse world position.
-       */
+      // ------------------------------------------------
+      // MOUSE WORLD POSITION
+      // ------------------------------------------------
 
       if (pointerActive) {
-        raycaster.setFromCamera(ndc, camera);
+        raycaster.setFromCamera(
+          ndc,
+          camera,
+        );
 
-        const hit = raycaster.ray.intersectPlane(groundPlane, planeHit);
+        const hit =
+          raycaster.ray.intersectPlane(
+            groundPlane,
+            planeHit,
+          );
 
         if (hit) {
-          mouseWorld.copy(planeHit);
+          mouseWorld.copy(
+            planeHit,
+          );
         }
       }
 
-      /*
-       * ------------------------------------------------
-       * BUBBLE FORCES
-       * ------------------------------------------------
-       */
+      // ------------------------------------------------
+      // FORCES
+      // ------------------------------------------------
 
-      for (let i = 0; i < bubbles.length; i++) {
-        const bubble = bubbles[i];
+      for (
+        let i = 0;
+        i < bubbles.length;
+        i++
+      ) {
+        const bubble =
+          bubbles[i];
 
-        const data = bubble.userData;
+        const data =
+          bubble.userData;
 
         const {
           radius,
@@ -980,84 +1193,88 @@ export default function GlassBubbles() {
           material,
         } = data;
 
-        /*
-         * Shader animation.
-         */
-
-        if (material?.userData?.shader) {
-          material.userData.shader.uniforms.uTime.value = elapsed;
+        // Shader animation
+        if (
+          material?.userData?.shader
+        ) {
+          material.userData.shader.uniforms.uTime.value =
+            elapsed;
         }
 
-        /*
-         * Texture movement.
-         */
-
+        // Texture movement
         texture.offset.set(
-          Math.sin(elapsed * 0.15 + drift) * 0.01,
+          Math.sin(
+            elapsed * 0.15 +
+              drift,
+          ) * 0.01,
 
-          Math.cos(elapsed * 0.12 + drift) * 0.01,
+          Math.cos(
+            elapsed * 0.12 +
+              drift,
+          ) * 0.01,
         );
 
-        /*
-         * ------------------------------------------------
-         * SELECTED BUBBLE
-         * ------------------------------------------------
-         */
+        // ------------------------------------------------
+        // SELECTED BUBBLE
+        // ------------------------------------------------
 
-        if (selectedIndex === i) {
-          /*
-           * Smoothly pull selected bubble
-           * toward exact center.
-           */
-
+        if (
+          selectedIndex === i
+        ) {
           data.vx +=
-            -bubble.position.x * PHYSICS.selectedAttraction * deltaTime;
+            -bubble.position.x *
+            PHYSICS.selectedAttraction *
+            deltaTime;
 
           data.vy +=
-            -bubble.position.y * PHYSICS.selectedAttraction * deltaTime;
-
-          /*
-           * Bring it toward camera.
-           */
+            -bubble.position.y *
+            PHYSICS.selectedAttraction *
+            deltaTime;
 
           data.vz +=
-            (PHYSICS.selectedForward - bubble.position.z) * 5 * deltaTime;
+            (
+              PHYSICS.selectedForward -
+              bubble.position.z
+            ) *
+            5 *
+            deltaTime;
 
-          data.targetScale = PHYSICS.selectedScale;
+          data.targetScale =
+            PHYSICS.selectedScale;
 
           continue;
         }
 
-        /*
-         * ------------------------------------------------
-         * EXPLODING BUBBLES
-         * ------------------------------------------------
-         */
+        // ------------------------------------------------
+        // EXPLODING BUBBLE
+        // ------------------------------------------------
 
         if (data.exploded) {
-          data.explosionLife += deltaTime;
+          data.explosionLife +=
+            deltaTime;
 
-          /*
-           * Continue pushing outward.
-           *
-           * This makes the movement match the
-           * video much better than a single impulse.
-           */
+          const life =
+            data.explosionLife;
 
-          const time = data.explosionLife;
+          // Strong at first, then quickly decreases.
+          const pushFade =
+            Math.exp(
+              -life * 1.7,
+            );
 
-          /*
-           * Strong initial push,
-           * quickly decreasing.
-           */
+          // Stronger for nearby bubbles.
+          const distanceFade =
+            THREE.MathUtils.clamp(
+              1 -
+                data.explosionDistance /
+                  PHYSICS.explosionRadius,
+              0.15,
+              1,
+            );
 
-          const pushFade = Math.exp(-time * 1.15);
-
-          const distanceFade = THREE.MathUtils.clamp(
-            1 - data.explosionDistance / 7,
-            0.2,
-            1,
-          );
+          // ------------------------------------------------
+          // CONTINUOUS OUTWARD FORCE
+          // ------------------------------------------------
 
           const push =
             PHYSICS.explosionStrength *
@@ -1065,146 +1282,272 @@ export default function GlassBubbles() {
             distanceFade *
             explosionScale;
 
-          data.vx += data.explosionDirX * push * deltaTime;
+          data.vx +=
+            data.explosionDirX *
+            push *
+            deltaTime;
 
-          data.vy += data.explosionDirY * push * deltaTime;
+          data.vy +=
+            data.explosionDirY *
+            push *
+            deltaTime;
 
-          data.vz += data.explosionDirZ * push * deltaTime;
+          data.vz +=
+            data.explosionDirZ *
+            push *
+            deltaTime;
 
-          /*
-           * Explosion damping.
-           */
+          // ------------------------------------------------
+          // EXTRA "JUMP" FORCE
+          // ------------------------------------------------
 
-          const explosionDamping = Math.pow(
-            PHYSICS.explosionDamping,
-            deltaTime * 60,
-          );
+          if (
+            life <
+            PHYSICS.explosionPushDuration
+          ) {
+            const jumpStrength =
+              (1 -
+                life /
+                  PHYSICS.explosionPushDuration) *
+              12 *
+              explosionScale;
 
-          data.vx *= explosionDamping;
+            data.vx +=
+              data.explosionDirX *
+              jumpStrength *
+              deltaTime;
 
-          data.vy *= explosionDamping;
+            data.vy +=
+              data.explosionDirY *
+              jumpStrength *
+              deltaTime;
 
-          data.vz *= explosionDamping;
+            data.vz +=
+              data.explosionDirZ *
+              jumpStrength *
+              deltaTime;
+          }
 
-          /*
-           * Smaller during explosion.
-           */
+          // ------------------------------------------------
+          // RANDOM ORGANIC MOTION
+          // ------------------------------------------------
 
-          data.targetScale = 0.92;
+          data.vx +=
+            data.explosionRandomX *
+            deltaTime;
 
-          /*
-           * Slight rotation.
-           */
+          data.vy +=
+            data.explosionRandomY *
+            deltaTime;
 
-          bubble.rotation.z += 0.12 * deltaTime;
+          data.vz +=
+            data.explosionRandomZ *
+            deltaTime;
 
-          /*
-           * Note: exploded bubbles still fall through to the
-           * shared bounds-clamp below (in the velocity/position
-           * loop) so they can't fly off screen — they just get
-           * a bit more room than idle bubbles.
-           */
+          // ------------------------------------------------
+          // DAMPING
+          // ------------------------------------------------
+
+          const explosionDamping =
+            Math.pow(
+              PHYSICS.explosionVelocityDamping,
+              deltaTime * 60,
+            );
+
+          data.vx *=
+            explosionDamping;
+
+          data.vy *=
+            explosionDamping;
+
+          data.vz *=
+            explosionDamping;
+
+          // Smaller while flying
+          data.targetScale =
+            0.92;
+
+          // Rotation
+          bubble.rotation.z +=
+            0.18 * deltaTime;
+
+          bubble.rotation.x +=
+            0.08 * deltaTime;
 
           continue;
         }
 
-        /*
-         * ------------------------------------------------
-         * NORMAL WANDER
-         * ------------------------------------------------
-         */
+        // ------------------------------------------------
+        // NORMAL WANDER
+        // ------------------------------------------------
 
-        if (elapsed >= data.wanderChangeAt) {
-          const angle = (Math.random() - 0.5) * PHYSICS.spreadAngle;
+        if (
+          elapsed >=
+          data.wanderChangeAt
+        ) {
+          const angle =
+            (Math.random() - 0.5) *
+            PHYSICS.spreadAngle;
 
-          const zAngle = (Math.random() - 0.5) * Math.PI;
+          const zAngle =
+            (Math.random() - 0.5) *
+            Math.PI;
 
-          data.wanderDirX = Math.sin(angle) * Math.cos(zAngle);
+          data.wanderDirX =
+            Math.sin(angle) *
+            Math.cos(zAngle);
 
-          data.wanderDirY = Math.cos(angle) * Math.cos(zAngle) - 0.15;
+          data.wanderDirY =
+            Math.cos(angle) *
+              Math.cos(zAngle) -
+            0.15;
 
-          data.wanderDirZ = Math.sin(zAngle);
+          data.wanderDirZ =
+            Math.sin(zAngle);
 
-          const [minimumTime, maximumTime] = PHYSICS.wanderChangeInterval;
+          const [
+            minimumTime,
+            maximumTime,
+          ] =
+            PHYSICS.wanderChangeInterval;
 
           data.wanderChangeAt =
-            elapsed + minimumTime + Math.random() * (maximumTime - minimumTime);
+            elapsed +
+            minimumTime +
+            Math.random() *
+              (maximumTime -
+                minimumTime);
         }
 
-        data.wanderX += data.wanderDirX * PHYSICS.wanderStep * deltaTime;
+        data.wanderX +=
+          data.wanderDirX *
+          PHYSICS.wanderStep *
+          deltaTime;
 
-        data.wanderY += data.wanderDirY * PHYSICS.wanderStep * deltaTime;
+        data.wanderY +=
+          data.wanderDirY *
+          PHYSICS.wanderStep *
+          deltaTime;
 
-        data.wanderZ += data.wanderDirZ * PHYSICS.wanderStep * deltaTime;
+        data.wanderZ +=
+          data.wanderDirZ *
+          PHYSICS.wanderStep *
+          deltaTime;
 
-        /*
-         * Floating target.
-         */
-
+        // Floating target
         const targetX =
-          data.wanderX + Math.cos(elapsed * floatSpeed * 0.6 + phase) * 0.18;
+          data.wanderX +
+          Math.cos(
+            elapsed *
+              floatSpeed *
+              0.6 +
+              phase,
+          ) *
+            0.18;
 
         const targetY =
           data.wanderY +
-          Math.sin(elapsed * floatSpeed + phase) * floatAmp * 0.55;
+          Math.sin(
+            elapsed *
+              floatSpeed +
+              phase,
+          ) *
+            floatAmp *
+            0.55;
 
-        const targetZ = data.wanderZ;
+        const targetZ =
+          data.wanderZ;
 
-        let forceX = (targetX - bubble.position.x) * PHYSICS.springStrength;
+        let forceX =
+          (targetX -
+            bubble.position.x) *
+          PHYSICS.springStrength;
 
-        let forceY = (targetY - bubble.position.y) * PHYSICS.springStrength;
+        let forceY =
+          (targetY -
+            bubble.position.y) *
+          PHYSICS.springStrength;
 
-        let forceZ = (targetZ - bubble.position.z) * PHYSICS.springStrength;
+        let forceZ =
+          (targetZ -
+            bubble.position.z) *
+          PHYSICS.springStrength;
 
-        /*
-         * ------------------------------------------------
-         * CLUSTER COHESION
-         * ------------------------------------------------
-         */
+        // ------------------------------------------------
+        // CLUSTER COHESION
+        // ------------------------------------------------
 
-        const distanceFromCenter = Math.sqrt(
-          bubble.position.x * bubble.position.x +
-            bubble.position.y * bubble.position.y +
-            bubble.position.z * bubble.position.z,
-        );
+        const distanceFromCenter =
+          Math.sqrt(
+            bubble.position.x *
+              bubble.position.x +
+              bubble.position.y *
+                bubble.position.y +
+              bubble.position.z *
+                bubble.position.z,
+          );
 
-        if (distanceFromCenter > PHYSICS.cohesionRadius) {
+        if (
+          distanceFromCenter >
+          PHYSICS.cohesionRadius
+        ) {
           const pull =
-            (distanceFromCenter - PHYSICS.cohesionRadius) *
+            (distanceFromCenter -
+              PHYSICS.cohesionRadius) *
             PHYSICS.cohesionStrength;
 
-          forceX += (-bubble.position.x / distanceFromCenter) * pull;
+          forceX +=
+            (-bubble.position.x /
+              distanceFromCenter) *
+            pull;
 
-          forceY += (-bubble.position.y / distanceFromCenter) * pull;
+          forceY +=
+            (-bubble.position.y /
+              distanceFromCenter) *
+            pull;
 
-          forceZ += (-bubble.position.z / distanceFromCenter) * pull;
+          forceZ +=
+            (-bubble.position.z /
+              distanceFromCenter) *
+            pull;
         }
 
-        /*
-         * ------------------------------------------------
-         * MOUSE REPULSION
-         * ------------------------------------------------
-         */
+        // ------------------------------------------------
+        // MOUSE REPULSION
+        // ------------------------------------------------
 
         if (pointerActive) {
-          const dx = bubble.position.x - mouseWorld.x;
+          const dx =
+            bubble.position.x -
+            mouseWorld.x;
 
-          const dy = bubble.position.y - mouseWorld.y;
+          const dy =
+            bubble.position.y -
+            mouseWorld.y;
 
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < PHYSICS.hoverRadius) {
-            const normalized = THREE.MathUtils.clamp(
-              1 - distance / PHYSICS.hoverRadius,
-              0,
-              1,
+          const distance =
+            Math.sqrt(
+              dx * dx +
+                dy * dy,
             );
 
-            /*
-             * Hover glow.
-             */
+          if (
+            distance <
+            PHYSICS.hoverRadius
+          ) {
+            const normalized =
+              THREE.MathUtils.clamp(
+                1 -
+                  distance /
+                    PHYSICS.hoverRadius,
+                0,
+                1,
+              );
 
-            if (material.userData.shader) {
+            if (
+              material.userData
+                .shader
+            ) {
               material.userData.shader.uniforms.uHover.value =
                 THREE.MathUtils.lerp(
                   material.userData.shader.uniforms.uHover.value,
@@ -1213,425 +1556,779 @@ export default function GlassBubbles() {
                 );
             }
 
-            const falloff = normalized * normalized;
+            const falloff =
+              normalized *
+              normalized;
 
             const strength =
-              (PHYSICS.hoverForce * falloff) / Math.sqrt(Math.max(radius, 0.3));
+              (PHYSICS.hoverForce *
+                falloff) /
+              Math.sqrt(
+                Math.max(
+                  radius,
+                  0.3,
+                ),
+              );
 
-            let dirX = dx / Math.max(distance, 0.001);
+            let dirX =
+              dx /
+              Math.max(
+                distance,
+                0.001,
+              );
 
-            let dirY = dy / Math.max(distance, 0.001);
+            let dirY =
+              dy /
+              Math.max(
+                distance,
+                0.001,
+              );
 
-            if (distance < 0.05) {
-              dirX = Math.random() - 0.5;
+            if (
+              distance < 0.05
+            ) {
+              dirX =
+                Math.random() -
+                0.5;
 
-              dirY = Math.random() - 0.5;
+              dirY =
+                Math.random() -
+                0.5;
 
-              const length = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+              const length =
+                Math.sqrt(
+                  dirX * dirX +
+                    dirY * dirY,
+                ) || 1;
 
               dirX /= length;
               dirY /= length;
             }
 
-            forceX += dirX * strength;
+            forceX +=
+              dirX * strength;
 
-            forceY += dirY * strength;
+            forceY +=
+              dirY * strength;
           }
         }
 
-        /*
-         * Apply forces.
-         */
+        // Apply force
+        data.vx +=
+          forceX *
+          deltaTime;
 
-        data.vx += forceX * deltaTime;
+        data.vy +=
+          forceY *
+          deltaTime;
 
-        data.vy += forceY * deltaTime;
-
-        data.vz += forceZ * deltaTime;
+        data.vz +=
+          forceZ *
+          deltaTime;
 
         data.targetScale = 1;
       }
 
-      /*
-       * --------------------------------------------------
-       * VELOCITY / POSITION
-       * --------------------------------------------------
-       */
+      // ------------------------------------------------
+      // VELOCITY + POSITION
+      // ------------------------------------------------
 
-      const damping = Math.pow(PHYSICS.damping, deltaTime * 60);
+      const damping =
+        Math.pow(
+          PHYSICS.damping,
+          deltaTime * 60,
+        );
 
-      for (let i = 0; i < bubbles.length; i++) {
-        const bubble = bubbles[i];
+      for (
+        let i = 0;
+        i < bubbles.length;
+        i++
+      ) {
+        const bubble =
+          bubbles[i];
 
-        const data = bubble.userData;
+        const data =
+          bubble.userData;
 
-        /*
-         * Don't damp the selected bubble
-         * too aggressively. Exploded bubbles get
-         * a much lighter damping so they keep
-         * flying off screen instead of settling
-         * back down near the cluster.
-         */
-
-        if (selectedIndex !== i) {
+        // Normal bubbles
+        if (
+          selectedIndex !== i
+        ) {
           if (data.exploded) {
-            const explosionVelocityDamping = Math.pow(
-              PHYSICS.explosionVelocityDamping,
-              deltaTime * 60,
-            );
+            // IMPORTANT:
+            // Do NOT use normal damping here.
+            // This lets the bubbles keep flying.
+            const explosionDamping =
+              Math.pow(
+                PHYSICS.explosionVelocityDamping,
+                deltaTime * 60,
+              );
 
-            data.vx *= explosionVelocityDamping;
-            data.vy *= explosionVelocityDamping;
-            data.vz *= explosionVelocityDamping;
+            data.vx *=
+              explosionDamping;
+
+            data.vy *=
+              explosionDamping;
+
+            data.vz *=
+              explosionDamping;
           } else {
-            data.vx *= damping;
-            data.vy *= damping;
-            data.vz *= damping;
+            data.vx *=
+              damping;
+
+            data.vy *=
+              damping;
+
+            data.vz *=
+              damping;
           }
         }
 
-        const speed = Math.sqrt(
-          data.vx * data.vx + data.vy * data.vy + data.vz * data.vz,
-        );
+        // ------------------------------------------------
+        // SPEED LIMIT
+        // ------------------------------------------------
 
-        const maximumSpeed = data.exploded
-          ? PHYSICS.explosionMaxVelocity
-          : PHYSICS.maxVelocity;
+        const speed =
+          Math.sqrt(
+            data.vx *
+              data.vx +
+              data.vy *
+                data.vy +
+              data.vz *
+                data.vz,
+          );
 
-        if (speed > maximumSpeed) {
-          const scale = maximumSpeed / speed;
+        const maximumSpeed =
+          data.exploded
+            ? PHYSICS.explosionMaxVelocity
+            : PHYSICS.maxVelocity;
+
+        if (
+          speed >
+          maximumSpeed
+        ) {
+          const scale =
+            maximumSpeed /
+            speed;
 
           data.vx *= scale;
           data.vy *= scale;
           data.vz *= scale;
         }
 
-        bubble.position.x += data.vx * deltaTime;
+        // ------------------------------------------------
+        // MOVE
+        // ------------------------------------------------
 
-        bubble.position.y += data.vy * deltaTime;
+        bubble.position.x +=
+          data.vx *
+          deltaTime;
 
-        bubble.position.z += data.vz * deltaTime;
+        bubble.position.y +=
+          data.vy *
+          deltaTime;
 
-        /*
-         * Keep all non-selected bubbles inside the visible
-         * frustum so bigger radii — and exploding bubbles —
-         * can't push them off-screen. Exploded bubbles get a
-         * bit more room (overflowFactor) so the burst still
-         * reads as an explosion instead of stopping dead at
-         * the same boundary as idle bubbles.
-         */
-        if (selectedIndex !== i) {
-          const fovRadians = (camera.fov * Math.PI) / 180;
+        bubble.position.z +=
+          data.vz *
+          deltaTime;
 
-          const distanceFromCamera = camera.position.z - bubble.position.z;
+        // ------------------------------------------------
+        // BOUNDS
+        //
+        // IMPORTANT:
+        // Normal bubbles stay inside.
+        //
+        // Exploded bubbles DO NOT get the same
+        // tight clamp. This is what lets them
+        // "jump out" like the video.
+        // ------------------------------------------------
+
+        if (
+          selectedIndex !== i &&
+          !data.exploded
+        ) {
+          const fovRadians =
+            (camera.fov *
+              Math.PI) /
+            180;
+
+          const distanceFromCamera =
+            camera.position.z -
+            bubble.position.z;
 
           const visibleHeight =
-            2 * Math.tan(fovRadians / 2) * distanceFromCamera;
+            2 *
+            Math.tan(
+              fovRadians / 2,
+            ) *
+            distanceFromCamera;
 
-          const visibleWidth = visibleHeight * camera.aspect;
+          const visibleWidth =
+            visibleHeight *
+            camera.aspect;
 
-          const effectiveRadius = data.radius * data.baseScale;
+          const effectiveRadius =
+            data.radius *
+            data.baseScale;
 
-          const overflowFactor = 1.0;
           const maxY =
-            (visibleHeight / 2) * overflowFactor - effectiveRadius - 0.2;
+            Math.max(
+              0.15,
+              visibleHeight / 2 -
+                effectiveRadius -
+                0.2,
+            );
 
           const maxX =
-            (visibleWidth / 2) * overflowFactor - effectiveRadius - 0.2;
+            Math.max(
+              0.15,
+              visibleWidth / 2 -
+                effectiveRadius -
+                0.2,
+            );
 
-          bubble.position.y = THREE.MathUtils.clamp(
-            bubble.position.y,
-            -maxY,
-            maxY,
-          );
+          bubble.position.y =
+            THREE.MathUtils.clamp(
+              bubble.position.y,
+              -maxY,
+              maxY,
+            );
 
-          bubble.position.x = THREE.MathUtils.clamp(
-            bubble.position.x,
-            -maxX,
-            maxX,
-          );
+          bubble.position.x =
+            THREE.MathUtils.clamp(
+              bubble.position.x,
+              -maxX,
+              maxX,
+            );
+        }
+
+        // ------------------------------------------------
+        // EXPLOSION OUTER LIMIT
+        //
+        // We don't clamp to the visible screen.
+        // We only prevent bubbles from flying
+        // infinitely far away.
+        // ------------------------------------------------
+
+        if (
+          data.exploded
+        ) {
+          const maxExplosionDistance =
+            18 *
+            PHYSICS.explosionOverflow;
+
+          const explosionDistance =
+            bubble.position.length();
+
+          if (
+            explosionDistance >
+            maxExplosionDistance
+          ) {
+            const normalized =
+              bubble.position
+                .clone()
+                .normalize();
+
+            bubble.position.copy(
+              normalized.multiplyScalar(
+                maxExplosionDistance,
+              ),
+            );
+
+            // Kill velocity when reaching
+            // the safety boundary.
+            data.vx *= 0.15;
+            data.vy *= 0.15;
+            data.vz *= 0.15;
+          }
         }
       }
 
-      /*
-       * --------------------------------------------------
-       * COLLISIONS
-       *
-       * Disable collisions once clicked.
-       * Otherwise the bubbles can fight the explosion.
-       * --------------------------------------------------
-       */
+      // ------------------------------------------------
+      // COLLISIONS
+      //
+      // Completely disabled after click.
+      // This is important because collision solving
+      // can otherwise cancel the explosion.
+      // ------------------------------------------------
 
-      if (selectedIndex === null) {
-        /*
-         * Velocity collision force.
-         */
+      if (
+        selectedIndex === null
+      ) {
+        // Velocity collision
+        for (
+          let i = 0;
+          i < bubbles.length;
+          i++
+        ) {
+          for (
+            let j = i + 1;
+            j < bubbles.length;
+            j++
+          ) {
+            const bubbleA =
+              bubbles[i];
 
-        for (let i = 0; i < bubbles.length; i++) {
-          for (let j = i + 1; j < bubbles.length; j++) {
-            const bubbleA = bubbles[i];
+            const bubbleB =
+              bubbles[j];
 
-            const bubbleB = bubbles[j];
+            const dx =
+              bubbleB.position.x -
+              bubbleA.position.x;
 
-            const dx = bubbleB.position.x - bubbleA.position.x;
+            const dy =
+              bubbleB.position.y -
+              bubbleA.position.y;
 
-            const dy = bubbleB.position.y - bubbleA.position.y;
+            const dz =
+              bubbleB.position.z -
+              bubbleA.position.z;
 
-            const dz = bubbleB.position.z - bubbleA.position.z;
+            let distance =
+              Math.sqrt(
+                dx * dx +
+                  dy * dy +
+                  dz * dz,
+              );
 
-            let distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-            if (distance < 0.0001) {
-              distance = 0.0001;
+            if (
+              distance <
+              0.0001
+            ) {
+              distance =
+                0.0001;
             }
 
             const minimumDistance =
-              (bubbleA.userData.radius + bubbleB.userData.radius) *
+              (bubbleA.userData.radius +
+                bubbleB.userData.radius) *
               PHYSICS.collisionRadiusMultiplier;
 
-            if (distance < minimumDistance) {
-              const overlap = (minimumDistance - distance) / minimumDistance;
+            if (
+              distance <
+              minimumDistance
+            ) {
+              const overlap =
+                (minimumDistance -
+                  distance) /
+                minimumDistance;
 
-              const nx = dx / distance;
+              const nx =
+                dx / distance;
 
-              const ny = dy / distance;
+              const ny =
+                dy / distance;
 
-              const nz = dz / distance;
+              const nz =
+                dz / distance;
 
-              const push = overlap * PHYSICS.collisionStrength;
+              const push =
+                overlap *
+                PHYSICS.collisionStrength;
 
-              const massA = bubbleA.userData.radius * bubbleA.userData.radius;
+              const massA =
+                bubbleA.userData.radius *
+                bubbleA.userData.radius;
 
-              const massB = bubbleB.userData.radius * bubbleB.userData.radius;
+              const massB =
+                bubbleB.userData.radius *
+                bubbleB.userData.radius;
 
-              const totalMass = massA + massB;
+              const totalMass =
+                massA + massB;
 
-              const shareA = massB / totalMass;
+              const shareA =
+                massB / totalMass;
 
-              const shareB = massA / totalMass;
+              const shareB =
+                massA / totalMass;
 
-              bubbleA.userData.vx -= nx * push * shareA * deltaTime;
+              bubbleA.userData.vx -=
+                nx *
+                push *
+                shareA *
+                deltaTime;
 
-              bubbleA.userData.vy -= ny * push * shareA * deltaTime;
+              bubbleA.userData.vy -=
+                ny *
+                push *
+                shareA *
+                deltaTime;
 
-              bubbleA.userData.vz -= nz * push * shareA * deltaTime;
+              bubbleA.userData.vz -=
+                nz *
+                push *
+                shareA *
+                deltaTime;
 
-              bubbleB.userData.vx += nx * push * shareB * deltaTime;
+              bubbleB.userData.vx +=
+                nx *
+                push *
+                shareB *
+                deltaTime;
 
-              bubbleB.userData.vy += ny * push * shareB * deltaTime;
+              bubbleB.userData.vy +=
+                ny *
+                push *
+                shareB *
+                deltaTime;
 
-              bubbleB.userData.vz += nz * push * shareB * deltaTime;
+              bubbleB.userData.vz +=
+                nz *
+                push *
+                shareB *
+                deltaTime;
             }
           }
         }
 
-        /*
-         * Position solver.
-         */
-
+        // Position solver
         for (
           let iteration = 0;
-          iteration < PHYSICS.collisionSolverIterations;
+          iteration <
+          PHYSICS.collisionSolverIterations;
           iteration++
         ) {
-          let overlapFound = false;
+          let overlapFound =
+            false;
 
-          for (let i = 0; i < bubbles.length; i++) {
-            for (let j = i + 1; j < bubbles.length; j++) {
-              const bubbleA = bubbles[i];
+          for (
+            let i = 0;
+            i < bubbles.length;
+            i++
+          ) {
+            for (
+              let j = i + 1;
+              j < bubbles.length;
+              j++
+            ) {
+              const bubbleA =
+                bubbles[i];
 
-              const bubbleB = bubbles[j];
+              const bubbleB =
+                bubbles[j];
 
-              const dx = bubbleB.position.x - bubbleA.position.x;
+              const dx =
+                bubbleB.position.x -
+                bubbleA.position.x;
 
-              const dy = bubbleB.position.y - bubbleA.position.y;
+              const dy =
+                bubbleB.position.y -
+                bubbleA.position.y;
 
-              const dz = bubbleB.position.z - bubbleA.position.z;
+              const dz =
+                bubbleB.position.z -
+                bubbleA.position.z;
 
-              let distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+              let distance =
+                Math.sqrt(
+                  dx * dx +
+                    dy * dy +
+                    dz * dz,
+                );
 
               const minimumDistance =
-                (bubbleA.userData.radius + bubbleB.userData.radius) *
+                (bubbleA.userData.radius +
+                  bubbleB.userData.radius) *
                 PHYSICS.collisionRadiusMultiplier;
 
-              if (distance < minimumDistance) {
-                overlapFound = true;
+              if (
+                distance <
+                minimumDistance
+              ) {
+                overlapFound =
+                  true;
 
-                if (distance < 0.0001) {
-                  distance = 0.0001;
+                if (
+                  distance <
+                  0.0001
+                ) {
+                  distance =
+                    0.0001;
                 }
 
-                const nx = dx / distance;
+                const nx =
+                  dx / distance;
 
-                const ny = dy / distance;
+                const ny =
+                  dy / distance;
 
-                const nz = dz / distance;
+                const nz =
+                  dz / distance;
 
-                const correction = minimumDistance - distance;
+                const correction =
+                  minimumDistance -
+                  distance;
 
-                const massA = bubbleA.userData.radius * bubbleA.userData.radius;
+                const massA =
+                  bubbleA.userData.radius *
+                  bubbleA.userData.radius;
 
-                const massB = bubbleB.userData.radius * bubbleB.userData.radius;
+                const massB =
+                  bubbleB.userData.radius *
+                  bubbleB.userData.radius;
 
-                const totalMass = massA + massB;
+                const totalMass =
+                  massA + massB;
 
-                const shareA = massB / totalMass;
+                const shareA =
+                  massB /
+                  totalMass;
 
-                const shareB = massA / totalMass;
+                const shareB =
+                  massA /
+                  totalMass;
 
-                bubbleA.position.x -= nx * correction * shareA;
+                bubbleA.position.x -=
+                  nx *
+                  correction *
+                  shareA;
 
-                bubbleA.position.y -= ny * correction * shareA;
+                bubbleA.position.y -=
+                  ny *
+                  correction *
+                  shareA;
 
-                bubbleA.position.z -= nz * correction * shareA;
+                bubbleA.position.z -=
+                  nz *
+                  correction *
+                  shareA;
 
-                bubbleB.position.x += nx * correction * shareB;
+                bubbleB.position.x +=
+                  nx *
+                  correction *
+                  shareB;
 
-                bubbleB.position.y += ny * correction * shareB;
+                bubbleB.position.y +=
+                  ny *
+                  correction *
+                  shareB;
 
-                bubbleB.position.z += nz * correction * shareB;
+                bubbleB.position.z +=
+                  nz *
+                  correction *
+                  shareB;
               }
             }
           }
 
-          if (!overlapFound) {
+          if (
+            !overlapFound
+          ) {
             break;
           }
         }
       }
 
-      /*
-       * --------------------------------------------------
-       * SCALE + BILLBOARD
-       * --------------------------------------------------
-       */
+      // ------------------------------------------------
+      // SCALE + BILLBOARD
+      // ------------------------------------------------
 
-      for (let i = 0; i < bubbles.length; i++) {
-        const bubble = bubbles[i];
+      for (
+        let i = 0;
+        i < bubbles.length;
+        i++
+      ) {
+        const bubble =
+          bubbles[i];
 
-        const data = bubble.userData;
+        const data =
+          bubble.userData;
 
-        data.baseScale = THREE.MathUtils.lerp(
+        data.baseScale =
+          THREE.MathUtils.lerp(
+            data.baseScale,
+            data.targetScale,
+            selectedIndex === i
+              ? PHYSICS.selectedLerp
+              : PHYSICS.explosionLerp,
+          );
+
+        bubble.scale.setScalar(
           data.baseScale,
-          data.targetScale,
-          selectedIndex === i ? PHYSICS.selectedLerp : PHYSICS.explosionLerp,
         );
 
-        bubble.scale.setScalar(data.baseScale);
-
-        /*
-         * Face camera.
-         */
-
-        bubble.quaternion.copy(camera.quaternion);
+        // Always face camera
+        bubble.quaternion.copy(
+          camera.quaternion,
+        );
       }
 
-      /*
-       * --------------------------------------------------
-       * CAMERA MOVEMENT
-       * --------------------------------------------------
-       */
+      // ------------------------------------------------
+      // CAMERA MOVEMENT
+      // ------------------------------------------------
 
-      camera.position.x += (mouse.x * 1.8 - camera.position.x) * 0.045;
+      camera.position.x +=
+        (
+          mouse.x * 1.8 -
+          camera.position.x
+        ) *
+        0.045;
 
-      camera.position.y += (-mouse.y * 1.3 - camera.position.y) * 0.045;
+      camera.position.y +=
+        (
+          -mouse.y * 1.3 -
+          camera.position.y
+        ) *
+        0.045;
 
-      camera.lookAt(0, 0, 0);
+      camera.lookAt(
+        0,
+        0,
+        0,
+      );
 
-      renderer.render(scene, camera);
+      renderer.render(
+        scene,
+        camera,
+      );
     }
 
     animate();
 
-    /*
-     * --------------------------------------------------
-     * RESIZE
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // RESIZE
+    // ------------------------------------------------
 
     function handleResize() {
-      width = mount.clientWidth;
+      width =
+        mount.clientWidth;
 
-      height = mount.clientHeight;
+      height =
+        mount.clientHeight;
 
-      camera.aspect = width / height;
+      camera.aspect =
+        width / height;
 
       camera.updateProjectionMatrix();
 
-      renderer.setSize(width, height);
+      renderer.setSize(
+        width,
+        height,
+      );
 
-      // Recompute and apply the device-based bubble size.
-      applyDeviceScale(getDeviceBubbleScale(width));
+      applyDeviceScale(
+        getDeviceBubbleScale(
+          width,
+        ),
+      );
 
-      // Recompute the device-based explosion force scale.
-      explosionScale = getDeviceExplosionScale(width);
+      explosionScale =
+        getDeviceExplosionScale(
+          width,
+        );
     }
 
-    window.addEventListener("resize", handleResize);
+    window.addEventListener(
+      "resize",
+      handleResize,
+    );
 
-    /*
-     * --------------------------------------------------
-     * CLEANUP
-     * --------------------------------------------------
-     */
+    // ------------------------------------------------
+    // CLEANUP
+    // ------------------------------------------------
 
     return () => {
-      cancelAnimationFrame(frameId);
+      cancelAnimationFrame(
+        frameId,
+      );
 
       if (navigateTimer) {
-        clearTimeout(navigateTimer);
+        clearTimeout(
+          navigateTimer,
+        );
       }
 
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener(
+        "resize",
+        handleResize,
+      );
 
-      window.removeEventListener("pointerup", pointerUpHandler);
+      window.removeEventListener(
+        "pointerup",
+        pointerUpHandler,
+      );
 
-      window.removeEventListener("pointercancel", pointerUpHandler);
+      window.removeEventListener(
+        "pointercancel",
+        pointerUpHandler,
+      );
 
-      mount.removeEventListener("pointermove", pointerMove);
+      mount.removeEventListener(
+        "pointermove",
+        pointerMove,
+      );
 
-      mount.removeEventListener("pointerenter", pointerEnter);
+      mount.removeEventListener(
+        "pointerenter",
+        pointerEnter,
+      );
 
-      mount.removeEventListener("pointerleave", pointerLeave);
+      mount.removeEventListener(
+        "pointerleave",
+        pointerLeave,
+      );
 
-      mount.removeEventListener("pointerdown", pointerDownHandler);
+      mount.removeEventListener(
+        "pointerdown",
+        pointerDownHandler,
+      );
 
-      /*
-       * Dispose everything.
-       */
-
-      bubbles.forEach((bubble) => {
-        bubble.traverse((child) => {
-          if (!child.isMesh) {
-            return;
-          }
-
-          if (child.geometry) {
-            child.geometry.dispose();
-          }
-
-          if (child.material) {
-            const materials = Array.isArray(child.material)
-              ? child.material
-              : [child.material];
-
-            materials.forEach((material) => {
-              if (material.map) {
-                material.map.dispose();
+      bubbles.forEach(
+        (bubble) => {
+          bubble.traverse(
+            (child) => {
+              if (!child.isMesh) {
+                return;
               }
 
-              material.dispose();
-            });
-          }
-        });
+              if (
+                child.geometry
+              ) {
+                child.geometry.dispose();
+              }
 
-        scene.remove(bubble);
-      });
+              if (
+                child.material
+              ) {
+                const materials =
+                  Array.isArray(
+                    child.material,
+                  )
+                    ? child.material
+                    : [child.material];
+
+                materials.forEach(
+                  (material) => {
+                    if (
+                      material.map
+                    ) {
+                      material.map.dispose();
+                    }
+
+                    material.dispose();
+                  },
+                );
+              }
+            },
+          );
+
+          scene.remove(
+            bubble,
+          );
+        },
+      );
 
       renderer.dispose();
 
-      if (mount.contains(renderer.domElement)) {
-        mount.removeChild(renderer.domElement);
+      if (
+        mount.contains(
+          renderer.domElement,
+        )
+      ) {
+        mount.removeChild(
+          renderer.domElement,
+        );
       }
     };
   }, [router]);
@@ -1642,6 +2339,7 @@ export default function GlassBubbles() {
       className="bubble-canvas-mount"
       style={{
         width: "100%",
+        height: "100%",
         overflow: "hidden",
         cursor: "grab",
         touchAction: "none",
