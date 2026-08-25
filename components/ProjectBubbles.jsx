@@ -45,9 +45,8 @@ const PHYSICS = {
   wanderChangeInterval: [2.2, 4.5],
 
   // Mouse interaction
-  // Mouse interaction
-hoverRadius: 20.2,
-hoverForce: 90,
+  hoverRadius: 20.2,
+  hoverForce: 90,
 
   // Bubble collision
   collisionStrength: 10,
@@ -80,6 +79,24 @@ hoverForce: 90,
 
   maxDeltaTime: 1 / 30,
 };
+
+/*
+ * --------------------------------------------------
+ * RESPONSIVE BUBBLE SIZE
+ *
+ * Returns a multiplier applied on top of each
+ * bubble's individually-randomized base radius.
+ * Tune the breakpoints/values to taste.
+ * --------------------------------------------------
+ */
+function getDeviceBubbleScale(width) {
+  if (width < 400) return 0.5; // very small phones
+  if (width < 640) return 0.62; // phones
+  if (width < 768) return 0.72; // large phones / small tablets
+  if (width < 1024) return 0.85; // tablets
+  if (width < 1440) return 1.0; // laptops / desktops
+  return 1.12; // large / wide desktop screens
+}
 
 function createHighlightMesh(size) {
   const geometry = new THREE.CircleGeometry(size, 24);
@@ -194,6 +211,9 @@ export default function GlassBubbles() {
     let width = mount.clientWidth;
     let height = mount.clientHeight;
 
+    // Current device-based multiplier applied to bubble radii.
+    let deviceScale = getDeviceBubbleScale(width);
+
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(
@@ -283,8 +303,13 @@ export default function GlassBubbles() {
     for (let i = 0; i < count; i++) {
       const project = PROJECTS[i % PROJECTS.length];
 
-      const radius =
+      // Base random radius, before device scaling is applied.
+      const baseRadius =
         1.35 + Math.random() * 0.40;
+
+      // Actual radius used for this bubble's geometry/physics,
+      // scaled for the current device/viewport size.
+      const radius = baseRadius * deviceScale;
 
       const group = new THREE.Group();
 
@@ -517,23 +542,23 @@ export default function GlassBubbles() {
        */
 
       const angle =
-  (Math.random() - 0.5) *
-  PHYSICS.spreadAngle;
+        (Math.random() - 0.5) *
+        PHYSICS.spreadAngle;
 
-const distance =
-  Math.pow(Math.random(), 1.7) *
-  2.0;
+      const distance =
+        Math.pow(Math.random(), 1.7) *
+        2.0;
 
-// sin -> full left/right width, cos -> upper 180° dome only
-const x =
-  Math.sin(angle) *
-  distance;
+      // sin -> full left/right width, cos -> upper 180° dome only
+      const x =
+        Math.sin(angle) *
+        distance;
 
-const y =
-  Math.cos(angle) *
-  distance *
-  0.78 -
-  0.6;
+      const y =
+        Math.cos(angle) *
+        distance *
+        0.78 -
+        0.6;
 
       const z =
         (Math.random() - 0.5) *
@@ -582,6 +607,10 @@ const y =
 
         texture,
 
+        // Store both the un-scaled base radius (so we can
+        // rebuild geometry cleanly on a device-scale change)
+        // and the current, device-scaled radius used by physics.
+        baseRadius,
         radius,
 
         vx: 0,
@@ -613,6 +642,49 @@ const y =
       scene.add(group);
 
       bubbles.push(group);
+    }
+
+    /*
+     * --------------------------------------------------
+     * RESPONSIVE RESIZE HELPER
+     *
+     * Rebuilds each bubble's sphere geometry (and
+     * repositions its glass highlights) at the new
+     * device-scaled radius, without disturbing the
+     * physics/position state.
+     * --------------------------------------------------
+     */
+
+    function applyDeviceScale(nextScale) {
+      if (Math.abs(nextScale - deviceScale) < 0.001) {
+        return;
+      }
+
+      deviceScale = nextScale;
+
+      bubbles.forEach((bubble) => {
+        const data = bubble.userData;
+
+        const newRadius = data.baseRadius * deviceScale;
+
+        data.radius = newRadius;
+
+        bubble.traverse((child) => {
+          if (!child.isMesh) {
+            return;
+          }
+
+          // The main glass sphere: rebuild geometry at new radius.
+          if (child.geometry?.type === "SphereGeometry") {
+            child.geometry.dispose();
+            child.geometry = new THREE.SphereGeometry(
+              newRadius,
+              48,
+              48,
+            );
+          }
+        });
+      });
     }
 
     /*
@@ -1319,22 +1391,22 @@ const y =
           data.wanderChangeAt
         ) {
           const angle =
-  (Math.random() - 0.5) *
-  PHYSICS.spreadAngle;
+            (Math.random() - 0.5) *
+            PHYSICS.spreadAngle;
 
-const zAngle =
-  (Math.random() -
-    0.5) *
-  Math.PI;
+          const zAngle =
+            (Math.random() -
+              0.5) *
+            Math.PI;
 
-data.wanderDirX =
-  Math.sin(angle) *
-  Math.cos(zAngle);
+          data.wanderDirX =
+            Math.sin(angle) *
+            Math.cos(zAngle);
 
-data.wanderDirY =
-  Math.cos(angle) *
-  Math.cos(zAngle) -
-  0.15;
+          data.wanderDirY =
+            Math.cos(angle) *
+            Math.cos(zAngle) -
+            0.15;
 
           data.wanderDirZ =
             Math.sin(zAngle);
@@ -1509,11 +1581,11 @@ data.wanderDirY =
               normalized *
               normalized;
 
-           const strength =
-  (PHYSICS.hoverForce *
-    falloff) /
-  Math.sqrt(
-    Math.max(radius, 0.3),
+            const strength =
+              (PHYSICS.hoverForce *
+                falloff) /
+              Math.sqrt(
+                Math.max(radius, 0.3),
               );
 
             let dirX =
@@ -1656,7 +1728,7 @@ data.wanderDirY =
           data.vz *= scale;
         }
 
-               bubble.position.x +=
+        bubble.position.x +=
           data.vx *
           deltaTime;
 
@@ -2103,6 +2175,9 @@ data.wanderDirY =
         width,
         height,
       );
+
+      // Recompute and apply the device-based bubble size.
+      applyDeviceScale(getDeviceBubbleScale(width));
     }
 
     window.addEventListener(
@@ -2227,8 +2302,6 @@ data.wanderDirY =
       style={{
         width: "100%",
         height: "100vh",
-
- 
 
         overflow: "hidden",
 
